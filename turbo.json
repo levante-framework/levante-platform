@@ -1,0 +1,22 @@
+{
+  "tasks": {
+    "build": {
+      "outputs": ["emulator_data/**"]
+    },
+    "build:dev": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "dev:db": {
+      "cache": false,
+      "persistent": true
+    },
+     "emulator:seed": {
+      "cache": false
+    }
+  }
+}

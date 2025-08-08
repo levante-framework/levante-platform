@@ -1,0 +1,2 @@
+(function(){try{var e=typeof window<"u"?window:typeof global<"u"?global:typeof globalThis<"u"?globalThis:typeof self<"u"?self:{},n=new e.Error().stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="90c7fd91-2032-4f38-b784-f40276b95f01",e._sentryDebugIdIdentifier="sentry-dbid-90c7fd91-2032-4f38-b784-f40276b95f01")}catch{}})();const d=function(){return null};export{d as VueQueryDevtools};
+//# sourceMappingURL=index-0rxCaP5H.js.map

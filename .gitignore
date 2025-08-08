@@ -50,6 +50,9 @@ build/Release
 node_modules/
 **/node_modules/
 
+# Turbo caching
+.turbo
+
 # Optional npm cache directory
 .npm
 

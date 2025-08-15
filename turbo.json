@@ -17,6 +17,15 @@
     },
      "emulator:seed": {
       "cache": false
+    },
+    "emulator:clear": {
+      "cache": false
+    },
+    "emulator:export": {
+      "cache": false
+    },
+    "emulator:reset": {
+      "cache": false
     }
   }
 }

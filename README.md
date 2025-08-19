@@ -13,6 +13,7 @@ See the [ROAR/ROAD Data Flow Diagram here](https://miro.com/app/board/uXjVNY-_qD
 ### Install dependencies and build projects:
 
 `npm install`
+
 `npm run build`
 
 ### Run the development server:

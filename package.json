@@ -2,7 +2,6 @@
   "name": "levante-platform",
   "private": true,
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
     "dev": "turbo run dev",
     "dev:db": "turbo run dev:db",
@@ -16,18 +15,6 @@
   "workspaces": [
     "apps/*"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/levante-framework/levante-platform.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/levante-framework/levante-platform/issues"
-  },
-  "homepage": "https://github.com/levante-framework/levante-platform#readme",
-  "description": "",
   "devDependencies": {
     "turbo": "^2.5.5"
   }, 

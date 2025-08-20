@@ -1,12 +1,6 @@
 # LEVANTE PLATFORTM
 
-levante-platform serves as the participant and administrator dashboard for LEVANTE (LEarning VAriability NeTwork Exchange) platform.
-
-This project is a fork of ROAR, with additional support for the Levante environment.
-
-### NPM Scripts for LEVANTE are listed in package.json
-
-See the [ROAR/ROAD Data Flow Diagram here](https://miro.com/app/board/uXjVNY-_qDA=/?share_link_id=967374624080).
+levante-platform integrates firebase-functions and levante-dashboard into a single repository.
 
 ## How to setup local dev environment:
 

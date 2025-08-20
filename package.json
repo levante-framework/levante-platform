@@ -10,7 +10,8 @@
     "emulator:seed": "turbo run emulator:seed",
     "emulator:clear": "turbo run emulator:clear",
     "emulator:export": "turbo run emulator:export",
-    "emulator:reset": "turbo run emulator:reset"
+    "emulator:reset": "turbo run emulator:reset",
+    "prepare": "husky install || true"
   },
   "workspaces": [
     "apps/*"

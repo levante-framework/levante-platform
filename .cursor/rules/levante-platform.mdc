@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+### General Project Context
+* levante-platform is a monorepo built with turborepo that integrates firebase-functions (backend) and levante-dashboard (vue + vite dashboard UI) into a single repository.
+
+## How to setup local dev environment:
+
+### Install dependencies and build projects:
+
+`npm install`
+
+`npm run build`
+
+### Run the development server:
+
+`npm run dev`
+
+### Seed Firebase Emulator data:
+
+Keep the server running, and in another terminal window, run:
+
+`npm run emulator:seed`
+
+## Dashboard Repository
+
+- Levante Dashboard https://github.com/levante-framework/levante-dashboard
+
+## Firebase Functions Repository
+
+- Firebase Functions https://github.com/levante-framework/levante-firebase-functions
+
+### Coding Style & Best Practices
+
+* Follow the linting rules defined in [@.eslintrc.js/.json] and formatting rules in [@.prettierrc.js/.json] if they exist.
+* Validate incoming data for HTTPS functions rigorously.
+* Keep functions focused on a single responsibility.
+* Handle asynchronous operations correctly using `async/await`.

@@ -11,13 +11,17 @@
     "emulator:clear": "turbo run emulator:clear",
     "emulator:export": "turbo run emulator:export",
     "emulator:reset": "turbo run emulator:reset",
+    "cypress:open": "cd apps/levante-dashboard && npm run cy",
+    "cypress:run": "cd apps/levante-dashboard && npm run cy:run",
+    "cypress:dev": "concurrently \"npm run dev\" \"npm run cypress:open\"",
     "prepare": "husky install || true"
   },
   "workspaces": [
     "apps/*"
   ],
   "devDependencies": {
-    "turbo": "^2.5.5"
+    "turbo": "^2.5.5",
+    "concurrently": "^8.2.2"
   }, 
   "packageManager": "npm@10.5.2"
 }

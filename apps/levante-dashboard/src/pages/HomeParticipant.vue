@@ -59,9 +59,8 @@
         </div>
       </div>
       <div class="tabs-container">
-        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" />
+        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="childInfo" />
         <Transition name="fade" mode="out-in">
-          <!-- TODO: Pass in data conditionally to one instance of GameTabs. -->
           <GameTabs
             v-if="showOptionalAssessments && userData"
             :games="optionalAssessments"
@@ -188,10 +187,7 @@ const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
-const taskIds = computed(() => {
-  return (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId);
-});
-
+const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
 const tasksQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(taskIds.value));
 
 const {
@@ -204,12 +200,8 @@ const {
 
 // Computed didn't react to selected admin changes, so using a ref instead.
 let hasSurvey = ref(false);
-watch(selectedAdmin, (newAdmin, oldAdmin) => {
+watch(selectedAdmin, (newAdmin) => {
   hasSurvey.value = newAdmin?.assessments.some((task) => task.taskId === 'survey');
-  // Reset survey store when switching between different administrations
-  if (newAdmin?.id !== oldAdmin?.id && oldAdmin?.id) {
-    surveyStore.reset();
-  }
 });
 
 const { data: surveyResponsesData } = useSurveyResponsesQuery({
@@ -332,6 +324,25 @@ const assessments = computed(() => {
       undefined,
     );
 
+    // Mark the survey as complete as if it was a task
+    if (userType.value === 'student') {
+      if (surveyStore.isGeneralSurveyComplete) {
+        fetchedAssessments.forEach((assessment) => {
+          if (assessment.taskId === 'survey') {
+            assessment.completedOn = new Date();
+          }
+        });
+      }
+    } else if (userType.value === 'teacher' || userType.value === 'parent') {
+      if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
+        fetchedAssessments.forEach((assessment) => {
+          if (assessment.taskId === 'survey') {
+            assessment.completedOn = new Date();
+          }
+        });
+      }
+    }
+
     return fetchedAssessments;
   }
   return [];
@@ -365,6 +376,11 @@ let totalGames = computed(() => {
 // Total games included in the current assessment
 let completeGames = computed(() => {
   return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
+});
+
+// Set up studentInfo for sidebar
+const studentInfo = computed(() => {
+  return {};
 });
 
 watch(
@@ -458,29 +474,25 @@ function setupMarkdownConverter(surveyInstance) {
 }
 
 watch(
-  [surveyDependenciesLoaded, selectedAdmin],
-  async ([isLoaded]) => {
+  surveyDependenciesLoaded,
+  async (isLoaded) => {
     const isAssessment = selectedAdmin.value?.assessments.some((task) => task.taskId === 'survey');
     if (!isLoaded || !isAssessment || surveyStore.survey) return;
 
     const surveyResponseDoc = (surveyResponsesData.value || []).find(
       (doc) => doc?.administrationId === selectedAdmin.value.id,
     );
-    let shouldInitializeSurvey = true;
-
-    // Calculate number of specific surveys for teachers/parents
-    const numOfSpecificSurveys =
-      userType.value === 'parent' ? userData.value?.childIds?.length : userData.value?.classes?.current?.length;
 
     if (surveyResponseDoc) {
       if (userType.value === 'student') {
         const isComplete = surveyResponseDoc.general.isComplete;
         surveyStore.setIsGeneralSurveyComplete(isComplete);
-        if (isComplete) {
-          shouldInitializeSurvey = false;
-        }
+        if (isComplete) return;
       } else {
         surveyStore.setIsGeneralSurveyComplete(surveyResponseDoc.general.isComplete);
+
+        const numOfSpecificSurveys =
+          userType.value === 'parent' ? userData.value?.childIds?.length : userData.value?.classes?.current?.length;
 
         if (surveyResponseDoc.specific && surveyResponseDoc.specific.length > 0) {
           if (
@@ -488,7 +500,6 @@ watch(
             surveyResponseDoc.specific.every((relation) => relation.isComplete)
           ) {
             surveyStore.setIsSpecificSurveyComplete(true);
-            shouldInitializeSurvey = false;
           } else {
             const incompleteIndex = surveyResponseDoc.specific.findIndex((relation) => !relation.isComplete);
             if (incompleteIndex > -1) {
@@ -498,19 +509,8 @@ watch(
             }
           }
         }
-
-        // Check if both general and specific surveys are complete
-        if (
-          surveyResponseDoc.general.isComplete &&
-          surveyResponseDoc.specific?.length === numOfSpecificSurveys &&
-          surveyResponseDoc.specific?.every((relation) => relation.isComplete)
-        ) {
-          shouldInitializeSurvey = false;
-        }
       }
     }
-
-    if (!shouldInitializeSurvey) return;
 
     // Fetch child docs for parent or class docs for teacher
     if (userType.value === 'parent' || userType.value === 'teacher') {
@@ -537,6 +537,14 @@ watch(
         }
       } catch (error) {
         console.error('Error fetching relation data:', error);
+      }
+    }
+
+    if (userType.value === 'student' && surveyStore.isGeneralSurveyComplete) {
+      return;
+    } else if (userType.value === 'teacher' || userType.value === 'parent') {
+      if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
+        return;
       }
     }
 

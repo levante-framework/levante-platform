@@ -937,10 +937,7 @@ export const assignmentPageFetcher = async (
             };
 
             try {
-              const { data } = await adminAxiosInstance.post(
-                `${getBaseDocumentPath()}/users/${userId}:runQuery`,
-                surveyQuery,
-              );
+              const { data } = await adminAxiosInstance.post(`${getBaseDocumentPath()}/users/${userId}:runQuery`, surveyQuery);
 
               const validResponses = data
                 .filter((doc) => doc.document)
@@ -1073,7 +1070,7 @@ export const getUserAssignments = async (roarUid) => {
   });
   const userId = toValue(roarUid);
   return await adminAxiosInstance
-    .post(`${getBaseDocumentPath()}/users/${userId}:runQuery`, assignmentRequest)
+    .post(`${getBaseDocumentPath()}/users/${toValue(userId)}:runQuery`, assignmentRequest)
     .then(async ({ data }) => {
       const assignmentData = mapFields(data);
       const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());

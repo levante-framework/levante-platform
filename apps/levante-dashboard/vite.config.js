@@ -7,12 +7,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import UnheadVite from '@unhead/addons/vite';
 import * as child from 'child_process';
 
-let commitHash = 'unknown';
-try {
-  commitHash = execSync('git rev-parse --short HEAD').toString().trim();
-} catch (e) {
-  console.warn('Git hash not available');
-}
+const commitHash = child.execSync('git rev-parse --short HEAD').toString();
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -30,11 +25,11 @@ export default defineConfig({
       },
     }),
     UnheadVite(),
-    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
+    ...(process.env.NODE_ENV === 'development' && process.env.CI !== 'true' ? [mkcert()] : []),
     ...(process.env.NODE_ENV !== 'development'
       ? [
           sentryVitePlugin({
-            org: 'roar-89588e380',
+            org: 'levante-framework',
             project: 'dashboard',
           }),
         ]
@@ -72,7 +67,12 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['@levante-framework/firekit'],
+    holdUntilCrawlEnd: false,
+    include: [
+      '@levante-framework/firekit',
+      'primevue'
+    ],
+    exclude: process.env.CI === 'true' ? ['@tanstack/vue-query-devtools'] : [],
     esbuildOptions: {
       mainFields: ['module', 'main'],
       resolveExtensions: ['.js', '.mjs', '.cjs'],

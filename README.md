@@ -43,6 +43,6 @@ Keep the server running, and in another terminal window, run:
 ### TODO
 
 - Set deployment processs like dashboard
-- Run pipeline
+- Run pipeline test
 - Integrate with CY Team Panel to see video recordings and validate the scenario
 - Fix husky

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:db": "turbo run dev:db",
+    "test": "turbo run test",
     "build": "turbo run build",
     "build:dev": "turbo run build:dev",
     "emulator:seed": "turbo run emulator:seed",

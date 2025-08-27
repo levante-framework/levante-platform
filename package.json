@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:db": "turbo run dev:db",
+    "test": "turbo run test",
     "build": "turbo run build",
     "build:dev": "turbo run build:dev",
     "emulator:seed": "turbo run emulator:seed",
@@ -20,8 +21,9 @@
     "apps/*"
   ],
   "devDependencies": {
-    "turbo": "^2.5.5",
-    "concurrently": "^8.2.2"
-  }, 
+    "concurrently": "^8.2.2",
+    "optimization-js": "^1.5.0",
+    "turbo": "^2.5.6"
+  },
   "packageManager": "npm@10.5.2"
 }

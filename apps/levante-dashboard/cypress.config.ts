@@ -1,7 +1,7 @@
 import { defineConfig } from 'cypress';
 
 export default defineConfig({
-  projectId: 'a7nqeq',
+  projectId: 'djwni9',
   e2e: {
     setupNodeEvents(on, config) {
       // implement node event listeners here
@@ -18,7 +18,7 @@ export default defineConfig({
     env: {
       // URLs dos servidores
       dashboardUrl: 'https://localhost:5173',
-      firebaseEmulatorUrl: 'http://localhost:4001',
+      firebaseEmulatorUrl: 'http://127.0.0.1:4001/',
       // Aguardar servidores estarem prontos
       waitForServers: true
     }

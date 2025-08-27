@@ -32,17 +32,17 @@ Keep the server running, and in another terminal window, run:
 
 ### DONE
 
-- Setup repo details
+- Setup repo details (turbo)
 - Fix node version
 - Fix builds
 - Fix bcrypt types bug
 - Fix dev env
 - Fix primeicons
-- Bring e2e .yml file
+- Bring e2e
 
 ### TODO
 
-- Set deployment processs like dashboard
-- Run pipeline test
-- Integrate with CY Team Panel to see video recordings and validate the scenario
+- Finish infrastructure
+- Run pipeline tests
+- Integrate with CY Team Panel
 - Fix husky

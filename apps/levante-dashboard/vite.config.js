@@ -7,7 +7,12 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import UnheadVite from '@unhead/addons/vite';
 import * as child from 'child_process';
 
-const commitHash = child.execSync('git rev-parse --short HEAD').toString();
+let commitHash = 'unknown';
+try {
+  commitHash = execSync('git rev-parse --short HEAD').toString().trim();
+} catch (e) {
+  console.warn('Git hash not available');
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({

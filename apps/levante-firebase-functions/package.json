@@ -10,15 +10,11 @@
     "build": "npm run build:admin && npm run build:assessment",
     "build:admin": "tsc -p functions/levante-admin/tsconfig.json",
     "build:assessment": "tsc -p functions/levante-assessment/tsconfig.json",
-
     "prepare": "husky install || true",
-
     "predeploy:levante-admin": "npm run build:admin",
     "predeploy:levante-assessment": "npm run build:assessment",
-
     "deploy:levante-admin": "firebase deploy --only functions --prefix ./functions/levante-admin/firebase.json",
     "deploy:levante-assessment": "firebase deploy --only functions --prefix ./functions/levante-assessment/firebase.json",
-
     "dev": "EMULATOR=TRUE firebase emulators:start --import=./emulator_data --export-on-exit=./emulator_data",
     "emulator:seed": "node emulator_scripts/seed-emulator.js",
     "emulator:clear": "node emulator_scripts/clear-emulator.js",

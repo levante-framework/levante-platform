@@ -22,7 +22,6 @@
     "apps/levante-firebase-functions/functions/*"
   ],
   "devDependencies": {
-    "@types/node": "^24.3.0",
     "concurrently": "^8.2.2",
     "optimization-js": "^1.5.0",
     "turbo": "^2.5.6",

@@ -20,6 +20,7 @@
     "emulator:clear": "node emulator_scripts/clear-emulator.js",
     "emulator:export": "firebase emulators:export ./emulator_data --force",
     "emulator:reset": "npm run emulator:clear && npm run emulator:seed"
+
   },
   "engines": {
     "node": "20"

@@ -1,7 +1,7 @@
 {
   "tasks": {
     "build": {
-      "outputs": ["emulator_data/**"]
+      "outputs": ["lib/**"]
     },
     "build:dev": {
       "dependsOn": ["^build"],
@@ -28,6 +28,9 @@
       "cache": false
     },
     "emulator:reset": {
+      "cache": false
+    },
+     "clean": {
       "cache": false
     }
   }

@@ -1,4 +1,4 @@
-# Contributing to LEVANTE Dashboard
+# Contributing to LEVANTE PLATFORM
 
 Welcome to Levante! We're looking forward to when we're ready to accept contributions.
 

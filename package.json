@@ -16,7 +16,12 @@
     "cypress:run": "cd apps/levante-dashboard && npm run cy:run",
     "cypress:dev": "concurrently \"npm run dev\" \"npm run cypress:open\"",
     "prepare": "husky install || true",
-    "clean": "rm -rf node_modules .turbo && cd apps/levante-firebase-functions && rm -rf node_modules .turbo emulator_data"
+    "clean:main": "rm -rf node_modules .turbo package-lock.json",
+    "clean:dashboard": "cd apps/levante-dashboard && rm -rf node_modules .turbo dist",
+    "clean:functions": "cd apps/levante-firebase-functions && rm -rf node_modules .turbo dist emulator_data",
+    "clean:all": "npm run clean:main && npm run clean:dashboard && npm run clean:functions",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix" 
   },
   "workspaces": [
     "apps/*",

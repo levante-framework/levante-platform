@@ -39,10 +39,9 @@ Keep the server running, and in another terminal window, run:
 - Fix dev env
 - Fix primeicons
 - Bring e2e
+- Finish infrastructure
+- Integrate with CY Team Panel
 
 ### TODO
 
-- Finish infrastructure
-- Run pipeline tests
-- Integrate with CY Team Panel
-- Fix husky
+- Run pipeline tests at GH

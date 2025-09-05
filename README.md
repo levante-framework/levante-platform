@@ -30,19 +30,7 @@ Keep the server running, and in another terminal window, run:
 
 ## To do list:
 
-### DONE
-
-- Setup repo details (turbo)
-- Fix node version
-- Fix builds
-- Fix bcrypt types bug
-- Fix dev env
-- Bring e2e
-- Finish infrastructure
-- Integrate with CY Team Panel
-- Add cleaning scripts
-
-### TODO
-
-- Fix primeicons
+- Update inner repos
+- Fix typescript, firebase-functions and primeicons in the updated versions as we did in the POC
 - Run pipeline tests at GH
+- Check husky (maybe I just bypassed it when evolving into POC development)

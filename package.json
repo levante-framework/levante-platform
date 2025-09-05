@@ -16,14 +16,20 @@
     "cypress:run": "cd apps/levante-dashboard && npm run cy:run",
     "cypress:dev": "concurrently \"npm run dev\" \"npm run cypress:open\"",
     "prepare": "husky install || true",
-    "clean": "rm -rf node_modules .turbo && cd apps/levante-firebase-functions && rm -rf node_modules .turbo emulator_data"
+    "clean:main": "rm -rf node_modules .turbo package-lock.json",
+    "clean:dashboard": "cd apps/levante-dashboard && rm -rf node_modules .turbo dist",
+    "clean:functions": "cd apps/levante-firebase-functions && rm -rf node_modules .turbo dist emulator_data",
+    "clean:admin-workspace": "cd apps/levante-firebase-functions/functions/levante-admin && rm -rf node_modules .turbo lib",
+    "clean:assessment-workspace": "cd apps/levante-firebase-functions/functions/levante-assessment && rm -rf node_modules .turbo lib",
+    "clean:all": "npm run clean:main && npm run clean:dashboard && npm run clean:functions && npm run clean:admin-workspace && npm run clean:assessment-workspace",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix" 
   },
   "workspaces": [
     "apps/*",
     "apps/levante-firebase-functions/functions/*"
   ],
   "devDependencies": {
-    "@types/node": "^24.3.0",
     "concurrently": "^8.2.2",
     "optimization-js": "^1.5.0",
     "turbo": "^2.5.6",

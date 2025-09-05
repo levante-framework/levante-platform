@@ -4,7 +4,6 @@
       "outputs": ["lib/**"]
     },
     "build:dev": {
-      "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
      "test": {

@@ -37,11 +37,12 @@ Keep the server running, and in another terminal window, run:
 - Fix builds
 - Fix bcrypt types bug
 - Fix dev env
-- Fix primeicons
 - Bring e2e
 - Finish infrastructure
 - Integrate with CY Team Panel
+- Add cleaning scripts
 
 ### TODO
 
+- Fix primeicons
 - Run pipeline tests at GH

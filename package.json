@@ -23,14 +23,17 @@
     "clean:assessment-workspace": "cd apps/levante-firebase-functions/functions/levante-assessment && rm -rf node_modules .turbo lib",
     "clean:all": "npm run clean:main && npm run clean:dashboard && npm run clean:functions && npm run clean:admin-workspace && npm run clean:assessment-workspace",
     "lint": "turbo run lint",
-    "lint:fix": "turbo run lint -- --fix" 
+    "lint:fix": "turbo run lint -- --fix"
   },
   "workspaces": [
-    "apps/*",
-    "apps/levante-firebase-functions/functions/*"
+    "apps/levante-dashboard",
+    "apps/levante-firebase-functions/functions/levante-admin",
+    "apps/levante-firebase-functions/functions/levante-assessment"
   ],
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
     "optimization-js": "^1.5.0",
     "turbo": "^2.5.6",
     "typescript": "^5.9.2"
@@ -38,5 +41,14 @@
   "engines": {
     "node": "20.x"
   },
-  "packageManager": "npm@10.5.2"
+  "packageManager": "npm@10.5.2",
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
 }

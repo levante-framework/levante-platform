@@ -8,9 +8,6 @@
         ".git",
         "firebase-debug.log",
         "firestore-debug.log"
-      ],
-      "predeploy": [
-        "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
     }
   ],
@@ -22,7 +19,13 @@
       "port": 9199
     },
     "functions": {
-      "port": 5002
+      "port": 5002,
+      "cors": {
+        "origin": ["https://localhost:5173", "http://localhost:5173"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allowedHeaders": ["Content-Type", "Authorization"],
+        "credentials": true
+      }
     },
     "firestore": {
       "port": 8180

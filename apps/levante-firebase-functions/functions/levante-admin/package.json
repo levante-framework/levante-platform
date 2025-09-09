@@ -1,0 +1,10 @@
+{
+  "name": "levante-admin",
+  "version": "1.0.0",
+  "description": "Levante Admin Functions",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {}
+}

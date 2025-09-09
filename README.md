@@ -30,7 +30,5 @@ Keep the server running, and in another terminal window, run:
 
 ## To do list:
 
-- Update inner repos
-- Fix typescript, firebase-functions and primeicons in the updated versions as we did in the POC
-- Run pipeline tests at GH
-- Check husky (maybe I just bypassed it when evolving into POC development)
+- Update ff
+- Update dashboard

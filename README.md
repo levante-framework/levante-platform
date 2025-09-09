@@ -20,13 +20,16 @@ Keep the server running, and in another terminal window, run:
 
 `npm run emulator:seed`
 
-## Dashboard Repository
+## Repository Structure
 
-- Levante Dashboard https://github.com/levante-framework/levante-dashboard
-
-## Firebase Functions Repository
-
-- Firebase Functions https://github.com/levante-framework/levante-firebase-functions
+```
+/apps
+    /levante-dashboard
+    /levante-firebase-functions
+        /functions
+            /levante-admin
+            /levante-assessment
+```
 
 ## To do list:
 

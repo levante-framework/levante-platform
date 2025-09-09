@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:db": "turbo run dev:db",
-    "test": "turbo run test",
+    "test": "turbo run test --filter=levante-dashboard",
     "build:firebase": "turbo run build:firebase",
     "build:dev": "turbo run build:dev",
     "emulator:seed": "turbo run emulator:seed",

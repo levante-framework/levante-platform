@@ -16,7 +16,7 @@ levante-platform integrates firebase-functions and levante-dashboard into a sing
 
 ### Seed Firebase Emulator data:
 
-Keep the server running, and in another terminal window, run:
+_Keep the server running_, and in another terminal window, run:
 
 `npm run emulator:seed`
 
@@ -30,8 +30,3 @@ Keep the server running, and in another terminal window, run:
             /levante-admin
             /levante-assessment
 ```
-
-## To do list:
-
-- Update ff
-- Update dashboard

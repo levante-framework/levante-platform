@@ -11,23 +11,30 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserChildDataQuery from '@/composables/queries/useUserChildDataQuery';
 import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAssessmentMutation';
-import packageLockJson from '../../../package-lock.json';
+// import packageLockJson from '../../../package-lock.json';
 import { logger } from '@/logger';
 
-const props = defineProps({
-  taskId: { type: String, default: 'egma-math' },
-});
+const props = withDefaults(
+  defineProps<{
+    taskId?: string
+  }>(),
+  {
+    taskId: 'sre'
+  }
+)
 
 let levanteTaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@levante-framework/core-tasks'];
+// const { version } = packageLockJson.packages['node_modules/@levante-framework/core-tasks'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+
+const version = import.meta.env.VITE_ROAR_SRE_VERSION;
 
 const { mutateAsync: completeAssessmentMutate } = useCompleteAssessmentMutation();
 

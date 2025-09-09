@@ -6,19 +6,29 @@ import mkcert from 'vite-plugin-mkcert';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import UnheadVite from '@unhead/addons/vite';
 import * as child from 'child_process';
+import { readFileSync } from 'fs';
 
 let commitHash = 'unknown';
 try {
-  commitHash = execSync('git rev-parse --short HEAD').toString().trim();
+  commitHash = child.execSync('git rev-parse --short HEAD').toString().trim();
 } catch (e) {
   console.warn('Git hash not available');
 }
 
-// https://vitejs.dev/config/
+let roarSreVersion = 'unknown';
+try {
+  const pkgPath = require.resolve('@bdelab/roar-sre/package.json');
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+  roarSreVersion = pkg.version;
+} catch (e) {
+  console.warn('Could not read version from @bdelab/roar-sre');
+}
+
 export default defineConfig({
   define: {
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(commitHash),
     'import.meta.env.VITE_LEVANTE': JSON.stringify('TRUE'),
+    'import.meta.env.VITE_ROAR_SRE_VERSION': JSON.stringify(roarSreVersion),
   },
   plugins: [
     Vue({
@@ -71,12 +81,10 @@ export default defineConfig({
       },
     },
   },
+
   optimizeDeps: {
     holdUntilCrawlEnd: false,
-    include: [
-      '@levante-framework/firekit',
-      'primevue'
-    ],
+    include: ['@levante-framework/firekit', 'primevue'],
     exclude: process.env.CI === 'true' ? ['@tanstack/vue-query-devtools'] : [],
     esbuildOptions: {
       mainFields: ['module', 'main'],

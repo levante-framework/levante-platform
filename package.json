@@ -6,7 +6,7 @@
     "dev": "turbo run dev",
     "dev:db": "turbo run dev:db",
     "test": "turbo run test --filter=levante-dashboard",
-    "build": "turbo run build --filter=levante-firebase-functions",
+    "build": "turbo run build",
     "build:dev": "turbo run build:dev --filter=levante-dashboard",
     "emulator:seed": "turbo run emulator:seed",
     "emulator:clear": "turbo run emulator:clear",
@@ -26,8 +26,7 @@
     "lint:fix": "turbo run lint -- --fix"
   },
   "workspaces": [
-    "apps/*",
-    "apps/levante-firebase-functions/functions/*"
+    "apps/*"
   ],
   "devDependencies": {
     "concurrently": "^8.2.2",

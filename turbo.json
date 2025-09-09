@@ -4,12 +4,6 @@
     "build": {
       "outputs": ["functions/levante-admin/lib/**", "functions/levante-assessment/lib/**"]
     },
-    "@levante-firebase-functions/levante-admin#build:firebase": {
-      "outputs": ["lib/**"]
-    },
-    "@levante-firebase-functions/levante-assessment#build:firebase": {
-      "outputs": ["lib/**"]
-    },
     "build:dev": {
       "outputs": ["dist/**"]
     },

@@ -8,7 +8,7 @@
     "functions/levante-assessment"
   ],
   "scripts": {
-    "build": "npm run build:admin && npm run build:assessment",
+    "build:firebase": "npm run build:admin && npm run build:assessment",
     "build:admin": "tsc -p functions/levante-admin/tsconfig.json",
     "build:assessment": "tsc -p functions/levante-assessment/tsconfig.json",
     "prepare": "husky install || true",

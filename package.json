@@ -6,7 +6,7 @@
     "dev": "turbo run dev",
     "dev:db": "turbo run dev:db",
     "test": "turbo run test",
-    "build": "turbo run build",
+    "build:firebase": "turbo run build:firebase",
     "build:dev": "turbo run build:dev",
     "emulator:seed": "turbo run emulator:seed",
     "emulator:clear": "turbo run emulator:clear",

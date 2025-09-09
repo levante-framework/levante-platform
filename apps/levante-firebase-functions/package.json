@@ -4,7 +4,8 @@
   "description": "Firebase functions for the LEVANTE platform",
   "main": "index.js",
   "workspaces": [
-    "functions/levante-admin"
+    "functions/levante-admin",
+    "functions/levante-assessment"
   ],
   "scripts": {
     "build": "npm run build:admin && npm run build:assessment",

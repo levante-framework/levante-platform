@@ -8,7 +8,7 @@
     "functions/levante-assessment"
   ],
   "scripts": {
-    "build:firebase": "npm run build:admin && npm run build:assessment",
+    "build": "npm run build:admin && npm run build:assessment",
     "build:admin": "tsc -p functions/levante-admin/tsconfig.json",
     "build:assessment": "tsc -p functions/levante-assessment/tsconfig.json",
     "prepare": "husky install || true",
@@ -45,7 +45,7 @@
   ],
   "license": "Stanford Academic Software License for LEVANTE",
   "bugs": {
-    "url": "https://github.com/levante-framework/levante-firebase-functions/issues"
+    "url": "https://github.com/levante-framework/lev  ante-firebase-functions/issues"
   },
   "homepage": "https://github.com/levante-framework/levante-firebase-functions#readme",
   "lint-staged": {
@@ -53,8 +53,8 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "firebase": "^11.6.1",
-    "firebase-admin": "^11.11.1",
+    "firebase": "^12.2.1",
+    "firebase-admin": "^12.2.1",
     "firebase-tools": "^14.5.0"
   },
   "devDependencies": {

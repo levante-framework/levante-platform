@@ -6,7 +6,7 @@
     "dev": "turbo run dev",
     "dev:db": "turbo run dev:db",
     "test": "turbo run test --filter=levante-dashboard",
-    "build:firebase": "turbo run build:firebase",
+    "build": "turbo run build --filter=levante-firebase-functions",
     "build:dev": "turbo run build:dev --filter=levante-dashboard",
     "emulator:seed": "turbo run emulator:seed",
     "emulator:clear": "turbo run emulator:clear",
@@ -26,22 +26,16 @@
     "lint:fix": "turbo run lint -- --fix"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "apps/levante-firebase-functions/functions/*"
   ],
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "@typescript-eslint/parser": "^5.62.0",
-    "@vue/eslint-config-standard": "^8.0.1",
     "concurrently": "^8.2.2",
-    "eslint": "^8.57.0",
-    "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-n": "^16.6.2",
-    "eslint-plugin-promise": "^6.1.1",
-    "eslint-plugin-vue": "^9.19.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.6",
+    "optimization-js": "^1.5.0",
     "turbo": "^2.5.6",
-    "typescript": "^5.4.5"
+    "typescript": "^5.9.2"
   },
   "engines": {
     "node": "20.x"

@@ -1,14 +1,20 @@
 {
-  "extends": "../../../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ES2020",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noImplicitAny": false,
     "outDir": "lib",
-    "noEmit": false
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2017",
+    "esModuleInterop": true
   },
   "ts-node": {
     "esm": true
   },
+  "lib": ["nodenext"],
+  "compileOnSave": true,
   "include": ["src"]
 }

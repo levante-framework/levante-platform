@@ -1,4 +1,5 @@
 {
+  "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
       "outputs": ["lib/**"]
@@ -6,7 +7,13 @@
     "build:dev": {
       "outputs": ["dist/**"]
     },
-     "test": {
+    "@levante-firebase-functions/levante-admin#build": {
+      "outputs": ["lib/**"]
+    },
+    "@levante-firebase-functions/levante-assessment#build": {
+      "outputs": ["lib/**"]
+    },
+    "test": {
       "cache": false
     },
     "dev": {
@@ -17,7 +24,7 @@
       "cache": false,
       "persistent": true
     },
-     "emulator:seed": {
+    "emulator:seed": {
       "cache": false
     },
     "emulator:clear": {
@@ -29,7 +36,7 @@
     "emulator:reset": {
       "cache": false
     },
-     "clean": {
+    "clean": {
       "cache": false
     }
   }

@@ -14,14 +14,13 @@ import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAs
 // import packageLockJson from '../../../package-lock.json';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 
-const props = withDefaults(
-  defineProps<{
-    taskId?: string
-  }>(),
-  {
-    taskId: 'sre'
-  }
-)
+const props = defineProps({
+  taskId: {
+    type: String,
+    required: false,
+    default: 'sre',
+  },
+});
 
 let TaskLauncher;
 

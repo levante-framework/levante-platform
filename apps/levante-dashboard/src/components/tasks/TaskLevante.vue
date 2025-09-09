@@ -14,14 +14,13 @@ import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAs
 // import packageLockJson from '../../../package-lock.json';
 import { logger } from '@/logger';
 
-const props = withDefaults(
-  defineProps<{
-    taskId?: string
-  }>(),
-  {
-    taskId: 'sre'
-  }
-)
+const props = defineProps({
+  taskId: {
+    type: String,
+    required: false,
+    default: 'sre',
+  },
+});
 
 let levanteTaskLauncher;
 

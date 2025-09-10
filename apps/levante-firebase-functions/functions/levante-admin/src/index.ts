@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as admin from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { logger, setGlobalOptions } from "firebase-functions/v2";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import {
   onDocumentCreated,
   onDocumentDeleted,
@@ -36,7 +37,6 @@ import { _linkUsers } from "./user-linking";
 import { writeSurveyResponses } from "./save-survey-results";
 import { _editUsers } from "./edit-users";
 import { onTaskDispatched } from "firebase-functions/v2/tasks";
-import _isEmpty from "lodash/isEmpty";
 import { _upsertOrg, OrgData } from "./upsert-org";
 import { syncOnRunDocUpdateEventHandler } from "./runs";
 
@@ -260,6 +260,63 @@ export const getAdministrations = onCall(async (request) => {
 
   return { status: "ok", data: administrations };
 });
+
+export const getAdministrationsHTTP = onRequest(
+  { cors: true },
+  async (request, response) => {
+    // Set CORS headers
+    response.set("Access-Control-Allow-Origin", "*");
+    response.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    response.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+    // Handle preflight requests
+    if (request.method === "OPTIONS") {
+      response.status(204).send("");
+      return;
+    }
+
+    try {
+      // Get the authorization header
+      const authHeader = request.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        response.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      // Verify the token and get the user
+      const token = authHeader.split("Bearer ")[1];
+      const decodedToken = await getAuth().verifyIdToken(token);
+      const adminUid = decodedToken.uid;
+
+      // Parse query parameters
+      const idsOnly = request.query.idsOnly === "true" || request.query.idsOnly === undefined;
+      const restrictToOpenAdministrations = request.query.restrictToOpenAdministrations === "true";
+      const testData = request.query.testData === "true" ? true : request.query.testData === "false" ? false : null;
+
+      const roarUid = await getRoarUid({
+        adminUid,
+        fallBackToAdminUid: true,
+      });
+
+      if (!roarUid) {
+        response.status(401).json({ error: "User must be authenticated" });
+        return;
+      }
+
+      const administrations = await getAdministrationsForAdministrator({
+        administratorRoarUid: roarUid,
+        restrictToOpenAdministrations,
+        testData,
+        idsOnly,
+      });
+
+      response.status(200).json({ status: "ok", data: administrations });
+    } catch (error) {
+      logger.error("Error in getAdministrationsHTTP:", error);
+      response.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
 
 export const unenrollOrgTask = onTaskDispatched(
   {

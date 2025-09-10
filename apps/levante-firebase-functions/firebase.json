@@ -12,6 +12,19 @@
       "predeploy": [
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
+    },
+    {
+      "source": "functions/levante-assessment",
+      "codebase": "levante-assessment",
+     "ignore": [
+        "node_modules",
+        "firestore-debug.log",
+        "firebase-debug.log",
+        ".git"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
     }
   ],
   "firestore": {

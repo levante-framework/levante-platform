@@ -8,7 +8,7 @@ levante-platform integrates firebase-functions and levante-dashboard into a sing
 
 `npm install`
 
-`npm run build:firebase`
+`npm run build`
 
 ### Run the development server:
 

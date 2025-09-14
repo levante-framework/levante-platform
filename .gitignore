@@ -12,6 +12,7 @@ build/
 lib/
 **/lib
 build/Release
+vite.config.js.timestamp-*
 
 # -------------------------
 # Environment & configs

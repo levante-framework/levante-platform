@@ -19,7 +19,9 @@
       "persistent": true
     },
     "emulator:seed": {
-      "cache": false
+      "outputs": ["emulator_data/**"],
+      "cache": false,
+      "dependsOn": ["build"]
     },
     "emulator:clear": {
       "cache": false

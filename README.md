@@ -10,7 +10,7 @@ levante-platform integrates firebase-functions and levante-dashboard into a sing
 
 `npm run build`
 
-### Run the development servers:
+### Run the development servers :
 
 `npm run dev`
 
@@ -33,5 +33,7 @@ levante-platform integrates firebase-functions and levante-dashboard into a sing
 
 ## Servers:
 
-levante-dashboard:dev ➜ https://localhost:5173/
-levante-firebase-functions ➜ http://127.0.0.1:4001/
+```
+levante-dashboard: https://localhost:5173/
+levante-firebase-functions: http://127.0.0.1:4001/
+```

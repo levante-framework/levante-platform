@@ -22,6 +22,7 @@
     "clean:admin-workspace": "cd apps/levante-firebase-functions/functions/levante-admin && rm -rf node_modules .turbo lib",
     "clean:assessment-workspace": "cd apps/levante-firebase-functions/functions/levante-assessment && rm -rf node_modules .turbo lib",
     "clean:all": "npm run clean:main && npm run clean:dashboard && npm run clean:functions && npm run clean:admin-workspace && npm run clean:assessment-workspace",
+    "clear:ports": "node scripts/clear-ports.js",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint -- --fix"
   },

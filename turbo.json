@@ -20,8 +20,7 @@
     },
     "emulator:seed": {
       "outputs": ["emulator_data/**"],
-      "cache": false,
-      "dependsOn": ["build"]
+      "cache": false
     },
     "emulator:clear": {
       "cache": false

@@ -1,4 +1,5 @@
-import { getAuth } from 'firebase-admin/auth';
+const admin = require('firebase-admin');
+const { getAuth } = require('firebase-admin/auth');
 
 async function createUserClaims(adminApp, users, organizations) {
   const auth = getAuth(adminApp);

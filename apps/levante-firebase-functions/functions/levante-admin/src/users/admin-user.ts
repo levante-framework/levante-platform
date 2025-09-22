@@ -6,7 +6,6 @@ import { v4 as uuidv4 } from "uuid";
 import { ICustomClaims, IName, IOrgsList } from "../interfaces";
 import {
   appendOrRemoveAdminOrgs,
-  setUidClaimsHandler,
   validateAdminStatus,
 } from "./set-custom-claims";
 import { ROLES } from "../utils/constants";
@@ -182,6 +181,7 @@ export const createAdminUser = async ({
           claims: {
             ...currentClaims,
             admin: true,
+            useNewPermissions: false,
           },
         },
         { merge: true }

@@ -4,10 +4,6 @@ import {
   type DocumentReference,
   type WriteResult,
 } from "firebase-admin/firestore";
-import _get from "lodash/get";
-import _head from "lodash/head";
-import _split from "lodash/split";
-import _set from "lodash/set";
 import _isEmpty from "lodash/isEmpty";
 import _includes from "lodash/includes";
 import _chunk from "lodash/chunk";
@@ -398,7 +394,7 @@ export const _createUsers = async (
     const adminUserClaimDoc = db
       .collection("userClaims")
       .doc(userAdminDocs[i].id);
-    adminUserClaimsDocs.push(adminUserClaimDoc.set({ claims: claims }));
+    adminUserClaimsDocs.push(adminUserClaimDoc.set({ claims: claims, useNewPermissions: false }));
 
     returnUserData.push({
       uid: authUserData.uid,

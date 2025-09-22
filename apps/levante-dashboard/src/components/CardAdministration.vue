@@ -1,8 +1,5 @@
 <template>
   <div class="p-card card-administration mb-4 w-full">
-    <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
-      <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
-    </div>
     <div class="card-admin-body w-full">
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
@@ -56,7 +53,7 @@
             <span>{{ tasksDictionary[assessmentId]?.name ?? assessmentId }}</span>
             <span
               v-if="showParams"
-              v-tooltip.top="'View parameters'"
+              v-tooltip.top="tooltip('View parameters')"
               class="pi pi-info-circle cursor-pointer ml-1"
               style="font-size: 0.8rem"
               @click="toggleParams($event, assessmentId)"
@@ -118,7 +115,7 @@
                 class="no-underline text-black"
               >
                 <PvButton
-                  v-tooltip.top="'See completion details'"
+                  v-tooltip.top="tooltip('See completion details')"
                   class="m-0 bg-transparent text-bluegray-500 shadow-none border-none p-0 border-round"
                   style="color: var(--primary-color) !important"
                   severity="secondary"
@@ -143,7 +140,7 @@
                 class="no-underline"
               >
                 <PvButton
-                  v-tooltip.top="'See Scores'"
+                  v-tooltip.top="tooltip('See Scores')"
                   class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
                   style="height: 2.5rem; color: var(--primary-color) !important"
                   severity="secondary"
@@ -191,7 +188,7 @@ import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAd
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-import { isLevante } from '@/helpers';
+import { isLevante, tooltip } from '@/helpers';
 
 interface Assessment {
   taskId: string;
@@ -503,52 +500,6 @@ const onExpand = async (node: TreeNode): Promise<void> => {
     expanding.value = false;
   }
 };
-
-const doughnutChartData = ref<ChartData>();
-const doughnutChartOptions = ref<ChartOptions>();
-
-const setDoughnutChartOptions = (): ChartOptions => ({
-  cutout: '60%',
-  showToolTips: true,
-  plugins: {
-    legend: {
-      display: false,
-    },
-    tooltip: {
-      enabled: true,
-    },
-  },
-});
-
-const setDoughnutChartData = (): ChartData => {
-  const docStyle = getComputedStyle(document.documentElement);
-  let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
-
-  started -= completed;
-  assigned -= started + completed;
-
-  return {
-    labels: ['Completed', 'Started', 'Assigned'],
-    datasets: [
-      {
-        data: [completed, started, assigned],
-        backgroundColor: [
-          docStyle.getPropertyValue('--bright-green'),
-          docStyle.getPropertyValue('--yellow-100'),
-          docStyle.getPropertyValue('--surface-d'),
-        ],
-        // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
-      },
-    ],
-  };
-};
-
-onMounted((): void => {
-  if (props.stats) {
-    doughnutChartData.value = setDoughnutChartData();
-    doughnutChartOptions.value = setDoughnutChartOptions();
-  }
-});
 </script>
 
 <style lang="scss">

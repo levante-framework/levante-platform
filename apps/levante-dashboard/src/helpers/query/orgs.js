@@ -240,41 +240,23 @@ export const fetchOrgByName = async (orgType, orgNormalizedName, selectedDistric
     aggregationQuery: false,
     orgNormalizedName,
     paginate: false,
-    select: ['id', 'normalizedName'],
+    select: ['id', 'name', 'normalizedName'],
     orderBy,
   });
 
-  console.log('requestBody: ', requestBody);
-
-  try {
-    const { data } = await axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody);
-    console.log('data: ', data);
-    const mapped = mapFields(data);
-    return Array.isArray(mapped) ? mapped : [];
-  } catch (error) {
-    console.error('error: ', error);
-    // If the error is due to no documents found, return empty array
-    // Otherwise, rethrow
-    if (
-      error?.response?.data?.error?.message?.toLowerCase().includes('no documents') ||
-      error?.response?.status === 404
-    ) {
-      return [];
-    }
-    return [];
-  }
+  return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
 };
 
 export const orgFetcher = async (
   orgType,
   selectedDistrict,
-  isSuperAdmin,
+  isAdmin,
   adminOrgs,
   select = ['name', 'id', 'tags', 'currentActivationCode'],
 ) => {
   const districtId = toValue(selectedDistrict);
 
-  if (isSuperAdmin.value) {
+  if (isAdmin) {
     const axiosInstance = getAxiosInstance();
     const requestBody = getOrgsRequestBody({
       orgType: orgType,
@@ -362,7 +344,7 @@ export const orgPageFetcher = async (
   orderBy,
   pageLimit,
   page,
-  isSuperAdmin,
+  isAdmin,
   adminOrgs,
   select = ['id', 'name', 'tags'],
 ) => {
@@ -379,7 +361,7 @@ export const orgPageFetcher = async (
     select,
   });
 
-  if (isSuperAdmin.value) {
+  if (isAdmin) {
     return axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody).then(({ data }) => mapFields(data));
   } else {
     if (activeOrgType.value === 'schools' && (adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value)) {

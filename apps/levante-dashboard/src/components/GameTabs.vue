@@ -38,7 +38,7 @@
           >
         </PvTab>
       </PvTabList>
-      <PvTabPanels style="width: 80vw; min-width: 800px; max-width: 1200px; margin-top: 0.5rem; padding: 0">
+      <PvTabPanels style="width: 100%; margin-top: 0.5rem; padding: 0">
         <PvTabPanel
           v-for="(game, index) in games"
           :key="game.taskId"
@@ -50,7 +50,7 @@
           :value="String(index)"
           class="p-0"
         >
-          <div class="roar-tabview-game pointer flex flex-row p-5 surface-100 w-full">
+          <div class="roar-tabview-game flex flex-row p-5 surface-100 w-full">
             <div class="roar-game-content flex flex-column" style="width: 65%">
               <div class="flex flex-column h-full">
                 <div class="roar-game-title font-bold">
@@ -118,40 +118,46 @@
                       :value="metaIndex + ': ' + items"
                     />
                   </div>
-                  <router-link
-                    v-if="!isTaskComplete(game.completedOn, game.taskId)"
-                    class="roar-game-footer p-3 hover:surface-200 no-underline text-900"
-                    :to="{
-                      path: getRoutePath(game.taskId, game.taskData?.variantURL, game.taskData?.taskURL),
-                    }"
-                    @click="routeExternalTask(game)"
-                  >
-                    <div class="flex align-items-center justify-content-center text-xl font-bold mt-2">
-                      <i class="pi">
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 42 42"
-                          fill="none"
-                          class="mr-3"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <rect width="42" height="42" rx="21" fill="#A80532" />
-                          <path
-                            d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
-                            fill="white"
-                          />
-                        </svg>
-                      </i>
-                      <span>{{ $t('gameTabs.clickToStart') }}</span>
-                    </div>
-                  </router-link>
-                  <div v-else>
-                    <div
-                      class="flex align-items-center justify-content-center text-green-500 roar-game-footer p-3 no-underline text-900 text-xl font-bold"
+
+                  <div v-if="selectedStatus === ASSIGNMENT_STATUSES.CURRENT">
+                    <button
+                      v-if="isTaskComplete(game?.completedOn, game?.taskId)"
+                      class="game-btn --completed"
+                      disabled
                     >
-                      <i v-if="game.completedOn" class="pi pi-check-circle mr-3" />
-                      <span>{{ taskCompletedMessage }} </span>
+                      <i class="pi pi-check-circle"></i>
+                      <span>{{ $t('gameTabs.taskCompleted') }}</span>
+                    </button>
+
+                    <router-link
+                      v-else
+                      class="game-btn"
+                      :to="{
+                        path: getRoutePath(game.taskId, game.taskData?.variantURL, game.taskData?.taskURL),
+                      }"
+                      @click="routeExternalTask(game)"
+                    >
+                      <img src="@/assets/arrow-circle.svg" alt="arrow-circle" />
+                      <span>{{ $t('gameTabs.clickToStart') }}</span>
+                    </router-link>
+                  </div>
+
+                  <div v-if="selectedStatus === ASSIGNMENT_STATUSES.UPCOMING">
+                    <div class="game-btn --disabled">
+                      <i class="pi pi-hourglass"></i>
+                      <span>Not yet available</span>
+                    </div>
+                  </div>
+
+                  <div v-if="selectedStatus === ASSIGNMENT_STATUSES.PAST">
+                    <div v-if="isTaskComplete(game?.completedOn, game?.taskId)" class="game-btn --disabled --completed">
+                      <i class="pi pi-check-circle"></i>
+                      <span>{{ $t('gameTabs.taskCompleted') }}</span>
+                    </div>
+
+                    <div v-else class="game-btn --disabled --incomplete">
+                      <i class="pi pi-ban"></i>
+                      <span>No longer available</span>
                     </div>
                   </div>
                 </div>
@@ -192,13 +198,13 @@ import PvTab from 'primevue/tab';
 import PvTabPanels from 'primevue/tabpanels';
 import PvTag from 'primevue/tag';
 import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
 import { useSurveyStore } from '@/store/survey';
-import { isLevante } from '@/helpers';
 import _capitalize from 'lodash/capitalize';
 import { useQueryClient } from '@tanstack/vue-query';
 import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
 import PvProgressBar from 'primevue/progressbar';
+import { useAssignmentsStore } from '@/store/assignments';
+import { ASSIGNMENT_STATUSES } from '@/constants';
 
 interface TaskData {
   name: string;
@@ -253,8 +259,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const authStore = useAuthStore();
-const gameStore = useGameStore();
+const assignmentsStore = useAssignmentsStore();
 const surveyStore = useSurveyStore();
+const { selectedStatus } = storeToRefs(assignmentsStore);
 const queryClient = useQueryClient();
 const surveyData = queryClient.getQueryData(['surveyResponses', props.userData.id]);
 
@@ -296,7 +303,7 @@ const getSpecificSurveyProgress = computed(() => (loopIndex: number): number => 
   // If data is not found in localStorage, use surveyData from server
   if (!surveyData || !Array.isArray(surveyData)) return 0;
 
-  const currentSurvey = (surveyData as any[]).find((doc) => doc.administrationId === selectedAdmin.value.id);
+  const currentSurvey = (surveyData as any[]).find((doc) => doc.administrationId === selectedAssignment.value.id);
   if (!currentSurvey || !currentSurvey.specific || !currentSurvey.specific[loopIndex]) return 0;
 
   // Specific survey is complete
@@ -336,17 +343,7 @@ const levanteTasks: string[] = [
   'survey',
   'mefs',
   'roarInference',
-];
-
-const levantifiedRoarTasks: string[] = [
   'vocab',
-  // Not yet implemented
-  // 'swr',
-  // 'swr-es',
-  // 'sre',
-  // 'sre-es',
-  // 'pa',
-  // 'pa-es',
 ];
 
 const getTaskName = (taskId: string, taskName: string): string => {
@@ -395,10 +392,7 @@ const getRoutePath = (taskId: string, variantURL?: string, taskURL?: string): st
 
   if (lowerCasedAndCamelizedTaskId === 'survey') {
     return '/survey';
-  } else if (
-    levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
-    (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
-  ) {
+  } else if (levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
     return '/game/core-tasks/' + taskId;
   } else {
     return '/game/' + taskId;
@@ -428,7 +422,7 @@ const displayGameIndex = computed((): number => (gameIndex.value === -1 ? 0 : ga
 
 const allGamesComplete = computed((): boolean => gameIndex.value === -1);
 
-const { selectedAdmin } = storeToRefs(gameStore);
+const { selectedAssignment } = storeToRefs(assignmentsStore);
 
 async function routeExternalTask(game: Game): Promise<void> {
   let url: string;
@@ -446,13 +440,13 @@ async function routeExternalTask(game: Game): Promise<void> {
     const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
     url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
     window.open(url, '_blank')?.focus();
-    await (authStore as any).completeAssessment(selectedAdmin.value.id, game.taskId);
+    await (authStore as any).completeAssessment(selectedAssignment.value.id, game.taskId);
   } else {
     url += `&participant=${props.userData.assessmentPid}${
       props.userData.schools?.current?.length ? '&schoolId=' + props.userData.schools.current.join('"%2C"') : ''
     }${props.userData.classes?.current?.length ? '&classId=' + props.userData.classes.current.join('"%2C"') : ''}`;
 
-    await (authStore as any).completeAssessment(selectedAdmin.value.id, game.taskId);
+    await (authStore as any).completeAssessment(selectedAssignment.value.id, game.taskId);
     window.location.href = url;
   }
 }
@@ -484,19 +478,11 @@ const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: st
       }
     } else {
       // child
-      if (surveyStore.isGeneralSurveyComplete) {
-        return true;
-      } else {
-        return false;
-      }
+      return surveyStore.isGeneralSurveyComplete;
     }
   }
 
-  if (gameCompletedTime) {
-    return true;
-  } else {
-    return false;
-  }
+  return gameCompletedTime ? true : false;
 };
 </script>
 
@@ -550,8 +536,88 @@ const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: st
   margin-top: auto;
   width: 100%;
   text-align: center;
-  background-color: #f0f0f0;
-  border-radius: 4px;
+}
+
+.game-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem;
+  background: transparent;
+  border: 1px solid var(--surface-200);
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: inherit;
+  text-decoration: none;
+  user-select: none;
+  width: 100%;
+  box-sizing: border-box;
+
+  // Reset button defaults
+  &[disabled] {
+    cursor: not-allowed;
+  }
+
+  .pi {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    border-radius: 100%;
+    background: transparent;
+    font-weight: 900;
+    font-size: 12px;
+    color: white;
+  }
+
+  &:hover {
+    background: var(--surface-200);
+  }
+
+  &.--disabled {
+    cursor: not-allowed;
+    border: 1px solid rgba(var(--bright-yellow-rgb), 0.3);
+
+    .pi {
+      background: var(--bright-yellow);
+    }
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  &.--completed {
+    border: none;
+    background: rgba(var(--bright-green-rgb), 0.1);
+
+    .pi {
+      background: var(--bright-green);
+    }
+
+    &:hover {
+      background: rgba(var(--bright-green-rgb), 0.1);
+    }
+  }
+
+  &.--incomplete {
+    border: none;
+    background: rgba(var(--bright-red-rgb), 0.1);
+
+    .pi {
+      background: var(--bright-red);
+    }
+
+    &:hover {
+      background: rgba(var(--bright-red-rgb), 0.1);
+    }
+  }
 }
 
 .p-progressbar {

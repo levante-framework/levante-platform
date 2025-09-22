@@ -6,9 +6,7 @@
           <PvMenubar :model="computedItems" class="w-full">
             <template #start>
               <router-link :to="{ path: APP_ROUTES.HOME }">
-                <div class="navbar-logo mx-3 levante-logo">
-                  <PvImage src="/LEVANTE/Levante_Logo.png" width="200" alt="LEVANTE Logo" />
-                </div>
+                <img src="/LEVANTE/Levante_Logo.png" alt="LEVANTE" class="levante-logo" />
               </router-link>
             </template>
 
@@ -48,7 +46,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import PvButton from 'primevue/button';
-import PvImage from 'primevue/image';
 import PvMenubar from 'primevue/menubar';
 import { useAuthStore } from '@/store/auth';
 import { getNavbarActions } from '@/router/navbarActions';
@@ -166,7 +163,7 @@ const isAtHome = computed((): boolean => {
 const rawActions = computed((): NavbarAction[] => {
   return getNavbarActions({
     isSuperAdmin: isSuperAdmin.value,
-    isAdmin: authStore.isUserAdmin,
+    isAdmin: authStore.isUserAdmin(),
     includeHomeLink: !isAtHome.value,
   });
 });
@@ -176,14 +173,29 @@ const toggleMenu = (event: Event): void => {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .p-button {
   min-width: 2.5rem;
   min-height: 2.5rem;
   top: -2px;
 }
+
 nav {
   min-width: 100%;
+}
+
+.p-menubar {
+  gap: 2rem;
+  padding: 1rem 2rem;
+  border: none;
+}
+
+.levante-logo {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  margin: 0;
+  padding: 0;
 }
 
 @media screen and (max-width: 768px) {

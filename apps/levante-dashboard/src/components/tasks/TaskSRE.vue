@@ -122,7 +122,7 @@ async function startTask(selectedAdmin) {
       });
 
       // Navigate to home, but first set the refresh flag to true.
-      gameStore.requireHomeRefresh();
+      gameStore.setHomeRefresh();
       router.push({ name: 'Home' });
     });
   } catch (error) {

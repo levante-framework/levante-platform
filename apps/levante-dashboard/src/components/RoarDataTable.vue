@@ -23,7 +23,7 @@
         <PvFloatLabel v-if="props.allowColumnSelection">
           <PvMultiSelect
             id="ms-columns"
-            v-tooltip.top="'Show and hide columns'"
+            v-tooltip.top="tooltip('Show and hide columns')"
             :model-value="selectedColumns"
             :options="inputColumns"
             option-label="header"
@@ -132,7 +132,7 @@
           >
             <template #header>
               <div
-                v-tooltip.top="`${toolTipByHeader(col.header)}`"
+                v-tooltip.top="tooltip(`${toolTipByHeader(col.header)}`)"
                 :style="[
                   toolTipByHeader(col.header).length > 0
                     ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
@@ -156,6 +156,7 @@
                   class="progress-tag"
                   rounded
                 />
+                <PvTag v-else class="progress-tag" icon="pi pi-ban" rounded severity="secondary" value="Not Assigned" />
               </div>
               <div
                 v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
@@ -170,7 +171,7 @@
               <div v-else-if="col.link">
                 <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
-                    v-tooltip.right="colData.tooltip"
+                    v-tooltip.right="tooltip(colData.tooltip)"
                     severity="secondary"
                     text
                     class="border border-round surface-200 p-2 hover:surface-500"
@@ -190,17 +191,25 @@
                 </span>
               </div>
               <div v-else-if="col.button">
-                <PvButton
-                  severity="secondary"
-                  text
-                  class="column-button border border-round surface-200 text-primary p-2 hover:surface-500 hover:text-white"
-                  :label="col.buttonLabel"
-                  :aria-label="col.buttonTooltip"
-                  :icon="col.buttonIcon"
-                  data-cy="event-button"
-                  size="small"
-                  @click="$emit(col.eventName, colData)"
-                />
+                <div class="flex align-items-center justify-content-center">
+                  <PvButton
+                    severity="secondary"
+                    text
+                    class="column-button border border-round surface-200 text-primary p-2 hover:surface-500 hover:text-white"
+                    :label="col.buttonLabel"
+                    :aria-label="col.buttonTooltip"
+                    :icon="col.buttonIcon"
+                    data-cy="event-button"
+                    size="small"
+                    @click="$emit(col.eventName, colData)"
+                  />
+                  <span
+                    v-if="col.eventName === 'assignments-button' && colData.assignmentCount != null"
+                    class="font-semibold text-sm ml-2"
+                  >
+                    {{ colData.assignmentCount }}
+                  </span>
+                </div>
               </div>
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}
@@ -394,6 +403,7 @@ import _startCase from 'lodash/startCase';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
+import { tooltip } from '@/helpers';
 
 /*
 Using the DataTable

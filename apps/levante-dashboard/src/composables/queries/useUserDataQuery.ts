@@ -5,7 +5,7 @@ import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { fetchDocById } from '@/helpers/query/utils';
 import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
-import { computed, type MaybeRefOrGetter } from 'vue';
+import { computed, unref, type MaybeRefOrGetter } from 'vue';
 
 /**
  * User profile data query.
@@ -19,15 +19,15 @@ const useUserDataQuery = (
   queryOptions?: UseQueryOptions,
 ): UseQueryReturnType => {
   const authStore = useAuthStore();
-  const { roarUid } = storeToRefs(authStore);
+  const { getUserId } = authStore;
 
-  const uid = computed(() => userId || roarUid.value);
+  const uid = computed(() => unref(userId) || getUserId());
   const queryConditions = [() => !!uid.value];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
-    queryKey: [USER_DATA_QUERY_KEY, uid],
-    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid),
+    queryKey: [USER_DATA_QUERY_KEY, uid.value],
+    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid.value),
     enabled: isQueryEnabled,
     ...options,
   });

@@ -21,7 +21,8 @@ body {
 
 // Sentry feedback widget
 #sentry-feedback {
-  display: flex;
+  // display: flex; // TODO: Uncomment this when we want to show the Sentry feedback widget
+  display: none;
   justify-content: flex-start;
   --border: 1px solid var(--primary-color);
   --background-hover: var(--red-100);
@@ -46,6 +47,18 @@ body {
 
 :-ms-input-placeholder {
   color: var(--text-color-secondary);
+}
+
+.app {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 0;
+
+  &.app--sidebar {
+    padding: 0 0 0 var(--sidebar-width);
+  }
 }
 
 .admin-page-header {

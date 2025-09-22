@@ -3,6 +3,7 @@
     <div v-if="!initialized || isLoading || isFetching">
       <LevanteSpinner fullscreen />
     </div>
+
     <div v-else-if="!hasAssignments">
       <div class="col-full text-center py-8">
         <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
@@ -19,61 +20,53 @@
     </div>
 
     <div v-else>
-      <PvFloatLabel>
-        <h2 v-if="userAssignments?.length == 1" class="dropdown-container">
-          {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
-        </h2>
-      </PvFloatLabel>
-      <div class="ml-5 mt-5">
-        <PvFloatLabel>
-          <div v-if="userAssignments?.length > 0" class="flex flex-row align-items-start w-full mt-4">
-            <div class="assignment-select-container">
-              <div class="flex w-full">
-                <PvSelect
-                  v-model="selectedAdmin"
-                  :options="sortedUserAdministrations ?? []"
-                  :option-label="
-                    userAssignments.every((administration) => administration.publicName) ? 'publicName' : 'name'
-                  "
-                  input-id="dd-assignment"
-                  data-cy="dropdown-select-administration"
-                  @change="toggleShowOptionalAssessments"
-                />
-                <label for="dd-assignment" class="p-0 m-0">{{ $t('homeParticipant.selectAssignment') }}</label>
-              </div>
+      <div class="assignment">
+        <div class="assignment__header">
+          <PvTag :value="selectedStatus" class="text-xs uppercase" :class="`assignment__status --${selectedStatus}`" />
+
+          <h2 class="assignment__name">
+            {{ selectedAssignment?.publicName || selectedAssignment?.name }}
+          </h2>
+
+          <div v-if="selectedAssignment?.dateOpened && selectedAssignment?.dateClosed" class="assignment__dates">
+            <div class="assignment__date">
+              <i class="pi pi-calendar"></i>
+              <small
+                ><span class="font-bold">{{ assignmentStartDateLabel }}</span>
+                {{ format(selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
+              >
+            </div>
+            <div class="assignment__date">
+              <i class="pi pi-calendar"></i>
+              <small
+                ><span class="font-bold">{{ assignmentEndDateLabel }}</span>
+                {{ format(selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
+              >
             </div>
           </div>
-        </PvFloatLabel>
-        <div
-          v-if="optionalAssessments.length !== 0"
-          class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
-        >
-          <PvToggleSwitch
-            v-model="showOptionalAssessments"
-            input-id="switch-optional"
-            data-cy="switch-show-optional-assessments"
-          />
-          <label for="switch-optional" class="mr-2 text-gray-500">{{
-            $t('homeParticipant.showOptionalAssignments')
-          }}</label>
         </div>
-      </div>
-      <div class="tabs-container">
-        <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="childInfo" />
-        <Transition name="fade" mode="out-in">
-          <GameTabs
-            v-if="showOptionalAssessments && userData"
-            :games="optionalAssessments"
-            :sequential="isSequential"
-            :user-data="userData"
-          />
-          <GameTabs
-            v-else-if="requiredAssessments && userData"
-            :games="requiredAssessments"
-            :sequential="isSequential"
-            :user-data="userData"
-          />
-        </Transition>
+
+        <div class="assignment__main">
+          <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" />
+
+          <div class="tabs-container">
+            <Transition name="fade" mode="out-in">
+              <!-- TODO: Pass in data conditionally to one instance of GameTabs. -->
+              <GameTabs
+                v-if="showOptionalAssessments && userData"
+                :games="optionalAssessments"
+                :sequential="isSequential"
+                :user-data="userData"
+              />
+              <GameTabs
+                v-else-if="requiredAssessments && userData"
+                :games="requiredAssessments"
+                :sequential="isSequential"
+                :user-data="userData"
+              />
+            </Transition>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -94,11 +87,8 @@ import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { storeToRefs } from 'pinia';
 import PvButton from 'primevue/button';
-import PvSelect from 'primevue/select';
-import PvToggleSwitch from 'primevue/toggleswitch';
-import PvFloatLabel from 'primevue/floatlabel';
 import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
+import { useAssignmentsStore } from '@/store/assignments';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
@@ -114,7 +104,7 @@ import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 import { Model, settings } from 'survey-core';
 import { Converter } from 'showdown';
-import { fetchAudioLinks } from '@/helpers/survey';
+import { fetchAudioLinks, getParsedLocale } from '@/helpers/survey';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient, useQuery } from '@tanstack/vue-query';
@@ -123,6 +113,8 @@ import { useSurveyStore } from '@/store/survey';
 import { fetchDocsById } from '@/helpers/query/utils';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import { logger } from '@/logger';
+import { format } from 'date-fns';
+import PvTag from 'primevue/tag';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -148,6 +140,9 @@ const init = () => {
 const authStore = useAuthStore();
 const { roarfirekit, showOptionalAssessments, userData: currentUserData } = storeToRefs(authStore);
 
+const assignmentsStore = useAssignmentsStore();
+const { selectedAssignment, selectedStatus, userAssignments } = storeToRefs(assignmentsStore);
+
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
@@ -155,9 +150,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
 });
-
-const gameStore = useGameStore();
-const { selectedAdmin } = storeToRefs(gameStore);
 
 const {
   data: districtsData,
@@ -178,7 +170,7 @@ const {
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
-  data: userAssignments,
+  data,
 } = useUserAssignmentsQuery({
   enabled: initialized,
 });
@@ -187,7 +179,22 @@ const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
-const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
+const now = computed(() => new Date());
+
+const assignmentStartDateLabel = computed(() => {
+  const dateOpened = selectedAssignment.value?.dateOpened || new Date();
+  return new Date(dateOpened) < now.value ? 'Opened:' : 'Open:';
+});
+
+const assignmentEndDateLabel = computed(() => {
+  const dateClosed = selectedAssignment.value?.dateClosed || new Date();
+  return new Date(dateClosed) < now.value ? 'Closed:' : 'Close:';
+});
+
+const taskIds = computed(() => {
+  return (selectedAssignment.value?.assessments ?? []).map((assessment) => assessment.taskId);
+});
+
 const tasksQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(taskIds.value));
 
 const {
@@ -200,8 +207,12 @@ const {
 
 // Computed didn't react to selected admin changes, so using a ref instead.
 let hasSurvey = ref(false);
-watch(selectedAdmin, (newAdmin) => {
+watch(selectedAssignment, (newAdmin, oldAdmin) => {
   hasSurvey.value = newAdmin?.assessments.some((task) => task.taskId === 'survey');
+  // Reset survey store when switching between different administrations
+  if (newAdmin?.id !== oldAdmin?.id && oldAdmin?.id) {
+    surveyStore.reset();
+  }
 });
 
 const { data: surveyResponsesData } = useSurveyResponsesQuery({
@@ -224,7 +235,7 @@ const hasAssignments = computed(() => {
 async function checkConsent() {
   showConsent.value = false;
 
-  const legal = selectedAdmin.value?.legal;
+  const legal = selectedAssignment.value?.legal;
   if (!legal) return;
 
   // Check if the user has already consented to the Levante consent form
@@ -249,8 +260,8 @@ async function checkConsent() {
 
 async function updateConsent() {
   consentParams.value = {
-    amount: selectedAdmin.value?.legal.amount,
-    expectedTime: selectedAdmin.value?.legal.expectedTime,
+    amount: selectedAssignment.value?.legal.amount,
+    expectedTime: selectedAssignment.value?.legal.expectedTime,
     dateSigned: new Date(),
   };
 
@@ -287,15 +298,22 @@ watch(
   { immediate: true },
 );
 
+// Watch for locale changes and reset survey to allow reinitialization with new locale
+watch(locale, (newLocale, oldLocale) => {
+  if (newLocale !== oldLocale && surveyStore.survey) {
+    surveyStore.reset();
+  }
+});
+
 // Assessments to populate the game tabs.
 // Generated based on the current selected administration Id
 const assessments = computed(() => {
-  if (!isFetching.value && selectedAdmin.value && (userTasks.value ?? []).length > 0) {
+  if (!isFetching.value && selectedAssignment && (userTasks.value ?? []).length > 0) {
     const fetchedAssessments = _without(
-      selectedAdmin.value.assessments.map((assessment) => {
+      selectedAssignment.value.assessments.map((assessment) => {
         // Get the matching assessment from userAssignments
         const matchingAssignment = _find(userAssignments.value, {
-          id: selectedAdmin.value.id,
+          id: selectedAssignment.value.id,
         });
         const matchingAssessments = matchingAssignment?.assessments ?? [];
         const matchingAssessment = _find(matchingAssessments, {
@@ -324,25 +342,6 @@ const assessments = computed(() => {
       undefined,
     );
 
-    // Mark the survey as complete as if it was a task
-    if (userType.value === 'student') {
-      if (surveyStore.isGeneralSurveyComplete) {
-        fetchedAssessments.forEach((assessment) => {
-          if (assessment.taskId === 'survey') {
-            assessment.completedOn = new Date();
-          }
-        });
-      }
-    } else if (userType.value === 'teacher' || userType.value === 'parent') {
-      if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
-        fetchedAssessments.forEach((assessment) => {
-          if (assessment.taskId === 'survey') {
-            assessment.completedOn = new Date();
-          }
-        });
-      }
-    }
-
     return fetchedAssessments;
   }
   return [];
@@ -361,7 +360,7 @@ const isSequential = computed(() => {
   return (
     _get(
       _find(userAssignments.value, (administration) => {
-        return administration.id === selectedAdmin.value.id;
+        return administration.id === selectedAssignment.value.id;
       }),
       'sequential',
     ) ?? true
@@ -378,13 +377,8 @@ let completeGames = computed(() => {
   return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
 });
 
-// Set up studentInfo for sidebar
-const studentInfo = computed(() => {
-  return {};
-});
-
 watch(
-  [userData, selectedAdmin, userAssignments],
+  [userData, selectedAssignment, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
     // If the assignments are still loading, abort.
     if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
@@ -394,49 +388,49 @@ watch(
       await checkConsent();
     }
 
-    const selectedAdminId = selectedAdmin.value?.id;
+    const selectedAssignmentId = selectedAssignment.value?.id;
     const allAdminIds = userAssignments.value?.map((administration) => administration.id) ?? [];
 
     // Verify that we have a selected administration and it is in the list of all assigned administrations.
-    if (selectedAdminId && allAdminIds.includes(selectedAdminId)) {
+    if (selectedAssignmentId && allAdminIds.includes(selectedAssignmentId)) {
       // Ensure that the selected administration is a fresh instance of the administration. Whilst this seems redundant,
       // this is apparently relevant in the case that the game store does not flush properly.
-      selectedAdmin.value = sortedUserAdministrations.value.find(
-        (administration) => administration.id === selectedAdminId,
+      selectedAssignment.value = sortedUserAdministrations.value.find(
+        (administration) => administration.id === selectedAssignmentId,
       );
 
       return;
     }
 
     // Otherwise, choose the first sorted administration if there is no selected administration.
-    selectedAdmin.value = sortedUserAdministrations.value[0];
+    selectedAssignment.value = sortedUserAdministrations.value[0];
   },
   { immediate: true },
 );
 
 const { data: surveyData } = useQuery({
-  queryKey: ['surveys'],
+  queryKey: ['surveys', locale.value],
   queryFn: async () => {
     const userType = userData.value.userType;
 
     if (userType === 'student') {
-      const resSurvey = await axios.get(`${LEVANTE_BUCKET_URL}/child_survey.json`);
+      const resSurvey = await axios.get(`${LEVANTE_BUCKET_URL}/surveys/child_survey.json`);
       const resAudio = await fetchAudioLinks('child-survey');
       surveyStore.setAudioLinkMap(resAudio);
       return {
         general: resSurvey.data,
       };
     } else if (userType === 'teacher') {
-      const resGeneral = await axios.get(`${LEVANTE_BUCKET_URL}/teacher_survey_general.json`);
-      const resClassroom = await axios.get(`${LEVANTE_BUCKET_URL}/teacher_survey_classroom.json`);
+      const resGeneral = await axios.get(`${LEVANTE_BUCKET_URL}/surveys/teacher_survey_general.json`);
+      const resClassroom = await axios.get(`${LEVANTE_BUCKET_URL}/surveys/teacher_survey_classroom.json`);
       return {
         general: resGeneral.data,
         specific: resClassroom.data,
       };
     } else {
       // parent
-      const resFamily = await axios.get(`${LEVANTE_BUCKET_URL}/parent_survey_family.json`);
-      const resChild = await axios.get(`${LEVANTE_BUCKET_URL}/parent_survey_child.json`);
+      const resFamily = await axios.get(`${LEVANTE_BUCKET_URL}/surveys/parent_survey_family.json`);
+      const resChild = await axios.get(`${LEVANTE_BUCKET_URL}/surveys/parent_survey_child.json`);
       return {
         general: resFamily.data,
         specific: resChild.data,
@@ -448,7 +442,7 @@ const { data: surveyData } = useQuery({
 });
 
 const surveyDependenciesLoaded = computed(() => {
-  return surveyData.value && userData.value && selectedAdmin.value && surveyResponsesData.value;
+  return surveyData.value && userData.value && selectedAssignment.value && surveyResponsesData.value;
 });
 
 const specificSurveyData = computed(() => {
@@ -459,7 +453,6 @@ const specificSurveyData = computed(() => {
 function createSurveyInstance(surveyDataToStartAt) {
   settings.lazyRender = true;
   const surveyInstance = new Model(surveyDataToStartAt);
-  // surveyInstance.showNavigationButtons = 'none';
   surveyInstance.locale = locale.value;
   return surveyInstance;
 }
@@ -474,25 +467,35 @@ function setupMarkdownConverter(surveyInstance) {
 }
 
 watch(
-  surveyDependenciesLoaded,
-  async (isLoaded) => {
-    const isAssessment = selectedAdmin.value?.assessments.some((task) => task.taskId === 'survey');
+  [surveyDependenciesLoaded, selectedAssignment],
+  async ([isLoaded]) => {
+    // Add additional safety check to prevent race condition errors
+    if (!selectedAssignment.value?.assessments) {
+      console.warn('selectedAssignment or assessments not available during survey initialization');
+      return;
+    }
+
+    const isAssessment = selectedAssignment.value.assessments.some((task) => task.taskId === 'survey');
     if (!isLoaded || !isAssessment || surveyStore.survey) return;
 
     const surveyResponseDoc = (surveyResponsesData.value || []).find(
-      (doc) => doc?.administrationId === selectedAdmin.value.id,
+      (doc) => doc?.administrationId === selectedAssignment.value?.id,
     );
+    let shouldInitializeSurvey = true;
+
+    // Calculate number of specific surveys for teachers/parents
+    const numOfSpecificSurveys =
+      userType.value === 'parent' ? userData.value?.childIds?.length : userData.value?.classes?.current?.length;
 
     if (surveyResponseDoc) {
       if (userType.value === 'student') {
         const isComplete = surveyResponseDoc.general.isComplete;
         surveyStore.setIsGeneralSurveyComplete(isComplete);
-        if (isComplete) return;
+        if (isComplete) {
+          shouldInitializeSurvey = false;
+        }
       } else {
         surveyStore.setIsGeneralSurveyComplete(surveyResponseDoc.general.isComplete);
-
-        const numOfSpecificSurveys =
-          userType.value === 'parent' ? userData.value?.childIds?.length : userData.value?.classes?.current?.length;
 
         if (surveyResponseDoc.specific && surveyResponseDoc.specific.length > 0) {
           if (
@@ -500,6 +503,7 @@ watch(
             surveyResponseDoc.specific.every((relation) => relation.isComplete)
           ) {
             surveyStore.setIsSpecificSurveyComplete(true);
+            shouldInitializeSurvey = false;
           } else {
             const incompleteIndex = surveyResponseDoc.specific.findIndex((relation) => !relation.isComplete);
             if (incompleteIndex > -1) {
@@ -509,8 +513,19 @@ watch(
             }
           }
         }
+
+        // Check if both general and specific surveys are complete
+        if (
+          surveyResponseDoc.general.isComplete &&
+          surveyResponseDoc.specific?.length === numOfSpecificSurveys &&
+          surveyResponseDoc.specific?.every((relation) => relation.isComplete)
+        ) {
+          shouldInitializeSurvey = false;
+        }
       }
     }
+
+    if (!shouldInitializeSurvey) return;
 
     // Fetch child docs for parent or class docs for teacher
     if (userType.value === 'parent' || userType.value === 'teacher') {
@@ -540,14 +555,6 @@ watch(
       }
     }
 
-    if (userType.value === 'student' && surveyStore.isGeneralSurveyComplete) {
-      return;
-    } else if (userType.value === 'teacher' || userType.value === 'parent') {
-      if (surveyStore.isGeneralSurveyComplete && surveyStore.isSpecificSurveyComplete) {
-        return;
-      }
-    }
-
     const surveyDataToStartAt =
       userType.value === 'student' || !surveyStore.isGeneralSurveyComplete
         ? surveyData.value.general
@@ -572,13 +579,13 @@ watch(
       userType: userType.value,
       roarfirekit: roarfirekit.value,
       uid: userData.value.id,
-      selectedAdminId: selectedAdmin.value.id,
+      selectedAdminId: selectedAssignment.value?.id,
       surveyStore,
       router,
       toast,
       queryClient,
       userData: userData.value,
-      gameStore,
+      assignmentsStore,
     });
 
     surveyStore.setSurvey(surveyInstance);
@@ -586,15 +593,7 @@ watch(
   { immediate: true },
 );
 </script>
-<style scoped>
-.tabs-container {
-  display: flex;
-  flex-direction: row;
-  max-width: 100vw;
-  padding: 2rem;
-  gap: 2rem;
-}
-
+<style lang="scss" scoped>
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.5s ease;
@@ -605,9 +604,78 @@ watch(
   opacity: 0;
 }
 
-.dropdown-container {
-  margin-top: 2rem;
-  margin-left: 2rem;
+.assignment {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 2rem;
+}
+
+.assignment__status {
+  &.--current {
+    background: rgba(var(--bright-green-rgb), 0.1);
+    color: var(--bright-green);
+  }
+
+  &.--upcoming {
+    background: rgba(var(--bright-yellow-rgb), 0.1);
+    color: var(--bright-yellow);
+  }
+
+  &.--past {
+    background: rgba(var(--bright-red-rgb), 0.1);
+    color: var(--bright-red);
+  }
+}
+
+.assignment__name {
+  display: block;
+  margin: 0.5rem 0 0;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--gray-600);
+
+  @media (max-width: 1024px) {
+    font-size: 1.35rem;
+  }
+}
+
+.assignment__dates,
+.assignment__date {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.5rem 0 0;
+}
+
+.assignment__date {
+  gap: 0.25rem;
+  margin: 0;
+  font-weight: 500;
+  color: var(--gray-500);
+
+  .pi {
+    margin: -2px 0 0;
+  }
+}
+
+.assignment__main {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+  height: auto;
+  margin: 2rem 0 0;
+}
+
+.tabs-container {
+  display: block;
+  // 100% - (side chart width) - (parent gap)
+  width: calc(100% - 200px - 2rem);
+  height: auto;
+  margin: 0;
+  padding: 0;
 }
 
 .assignment-select-container {
@@ -616,11 +684,5 @@ watch(
 
 .switch-container {
   min-width: 24%;
-}
-
-@media screen and (max-width: 1100px) {
-  .tabs-container {
-    flex-direction: row;
-  }
 }
 </style>

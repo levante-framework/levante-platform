@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/auth';
 import { SIGN_OUT_MUTATION_KEY } from '@/constants/mutationKeys';
 import { APP_ROUTES } from '@/constants/routes';
 import { useSurveyStore } from '@/store/survey';
-import { useGameStore } from '@/store/game';
+import { useAssignmentsStore } from '@/store/assignments';
 
 /**
  * Sign-Out mutation.
@@ -14,9 +14,9 @@ import { useGameStore } from '@/store/game';
  * @returns The mutation object returned by `useMutation`.
  */
 const useSignOutMutation = (): UseMutationReturnType<void, Error, void, unknown> => {
+  const assignmentsStore = useAssignmentsStore();
   const authStore = useAuthStore();
   const surveyStore = useSurveyStore();
-  const gameStore = useGameStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -31,12 +31,12 @@ const useSignOutMutation = (): UseMutationReturnType<void, Error, void, unknown>
 
       // Reset store and delete persisted data. Persisted data should be cleared via the $reset but to be safe, we also
       // remove it manually from sessionStorage to prevent any issues.
+      assignmentsStore.$reset();
       authStore.$reset();
-      gameStore.$reset();
-      surveyStore.$reset();
+      assignmentsStore.$reset();
+      surveyStore.reset();
       sessionStorage.removeItem('authStore');
-      sessionStorage.removeItem('surveyStore');
-      sessionStorage.removeItem('gameStore');
+      sessionStorage.removeItem('assignmentsStore');
 
       // Clear the query client to remove all cached data.
       queryClient.clear();

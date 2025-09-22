@@ -9,8 +9,7 @@ import type { RoarFirekit as RoarfirekitType } from '@bdelab/roar-firekit';
 import type { ToastServiceMethods } from 'primevue/toastservice';
 // @ts-expect-error - Will be resolved when store file is converted to TS
 import type { UseSurveyStore } from '@/store/survey';
-// @ts-expect-error - Will be resolved when store file is converted to TS
-import type { UseGameStore } from '@/store/game';
+import type { useAssignmentsStore } from '@/store/assignments';
 import { LEVANTE_BUCKET_SURVEY_AUDIO, LEVANTE_BUCKET_URL } from '@/constants/bucket';
 
 export interface AudioLinkMap {
@@ -100,9 +99,10 @@ interface StructuredSurveyResponse {
   pageNo: number;
   isGeneral: boolean;
   isComplete: boolean;
-  specificId: string | number;
+  specificId?: string | number;
   responses: Record<string, SurveyResponse | null>;
   userType: string;
+  isEntireSurveyCompleted: boolean;
 }
 
 interface SaveFinalSurveyDataParams {
@@ -116,7 +116,7 @@ interface SaveFinalSurveyDataParams {
   queryClient: QueryClient;
   specificIds: (string | number)[];
   userType: string;
-  gameStore: UseGameStore;
+  assignmentsStore: typeof useAssignmentsStore;
 }
 
 const context = new AudioContext();
@@ -127,15 +127,18 @@ export const fetchAudioLinks = async (surveyType: string): Promise<AudioLinkMap>
   const files = response.data || { items: [] };
   const audioLinkMap: AudioLinkMap = {};
   files.items.forEach((item: GCSFileItem) => {
-    if (item.contentType === 'audio/mpeg' && item.name.startsWith(surveyType)) {
+    if (item.contentType === 'audio/mpeg' && item.name.startsWith(`audio/${surveyType}`)) {
       const splitParts = item.name.split('/');
-      const fileLocale = splitParts[1];
-      const fileName = splitParts.at(-1)?.split('.')?.[0];
-      if (fileName) {
-        if (!audioLinkMap[fileLocale]) {
-          audioLinkMap[fileLocale] = {};
+      // Expected format: audio/surveyType/locale/filename.mp3
+      if (splitParts.length >= 4 && splitParts[0] === 'audio') {
+        const fileLocale = splitParts[2];
+        const fileName = splitParts.at(-1)?.split('.')?.[0];
+        if (fileName && fileLocale) {
+          if (!audioLinkMap[fileLocale]) {
+            audioLinkMap[fileLocale] = {};
+          }
+          audioLinkMap[fileLocale][fileName] = LEVANTE_BUCKET_URL + `/${item.name}`;
         }
-        audioLinkMap[fileLocale][fileName] = LEVANTE_BUCKET_URL + `/${item.name}`;
       }
     }
   });
@@ -171,6 +174,7 @@ export const fetchBuffer = ({
     return;
   }
   setSurveyAudioLoading(true);
+
   const bufferLoader = new BufferLoader(context, audioLinks[parsedLocale], (bufferList: BufferList) =>
     finishedLoading({
       bufferList,
@@ -308,7 +312,7 @@ export async function saveFinalSurveyData({
   queryClient,
   specificIds,
   userType,
-  gameStore,
+  assignmentsStore,
 }: SaveFinalSurveyDataParams): Promise<void> {
   const fromStorage = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
 
@@ -335,6 +339,7 @@ export async function saveFinalSurveyData({
     specificId: 0,
     responses: responsesWithAllQuestions,
     userType: userType,
+    isEntireSurveyCompleted: false,
   };
 
   // Update specificId if it's a specific survey
@@ -343,6 +348,23 @@ export async function saveFinalSurveyData({
     const specificIndex = surveyStore.specificSurveyRelationIndex;
     structuredResponses.specificId = specificIds[specificIndex];
   }
+
+  let isEntireSurveyCompleted;
+  if (userType === 'student') {
+    isEntireSurveyCompleted = true;
+  } else {
+    const hasSpecificSurveys = surveyStore.specificSurveyRelationData.length > 0;
+    // If the teacher/caregiver has no classes or children, the entire survey is complete
+    if (!hasSpecificSurveys) {
+      isEntireSurveyCompleted = true;
+    } else {
+      isEntireSurveyCompleted =
+        surveyStore.isGeneralSurveyComplete &&
+        surveyStore.specificSurveyRelationIndex === surveyStore.specificSurveyRelationData.length - 1;
+    }
+  }
+
+  structuredResponses.isEntireSurveyCompleted = isEntireSurveyCompleted;
 
   // turn on loading state
   surveyStore.setIsSavingSurveyResponses(true);
@@ -372,7 +394,7 @@ export async function saveFinalSurveyData({
 
     queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
 
-    gameStore.requireHomeRefresh();
+    assignmentsStore.setHomeRefresh();
     router.push({ name: 'Home' });
   } catch (error: unknown) {
     surveyStore.setIsSavingSurveyResponses(false);

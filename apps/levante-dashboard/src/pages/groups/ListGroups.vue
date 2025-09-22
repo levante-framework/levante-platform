@@ -27,8 +27,12 @@
           </div>
         </div>
       </div>
-      <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" lazy class="mb-7">
-        <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+      <PvTabs v-if="claimsLoaded" v-model:value="activeOrgTypeValue" lazy class="mb-7">
+        <PvTabList>
+          <PvTab v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">{{ orgType.header }}</PvTab>
+        </PvTabList>
+        <PvTabPanels>
+          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">
           <div class="grid column-gap-3 mt-2">
             <div
               v-if="activeOrgType === 'schools' || activeOrgType === 'classes' || activeOrgType === 'groups'"
@@ -69,15 +73,17 @@
             :columns="tableColumns"
             :data="filteredTableData ?? []"
             sortable
-            :loading="isLoading || isFetching"
+            :loading="isTableLoading"
             :allow-filtering="false"
             @export-all="exportAll"
             @selected-org-id="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
+            @assignments-button="onAssignmentsButtonClick($event)"
           />
         </PvTabPanel>
-      </PvTabView>
+        </PvTabPanels>
+      </PvTabs>
     </section>
     <section class="flex mt-8 justify-content-end">
       <PvDialog
@@ -162,9 +168,19 @@
   </RoarModal>
 
   <AddGroupModal :isVisible="isAddGroupModalVisible" @close="isAddGroupModalVisible = false" />
+
+  <GroupAssignmentsModal
+    :is-visible="isAssignmentsModalVisible"
+    :org-id="selectedOrgId"
+    :org-name="selectedOrgName"
+    :org-type="activeOrgType"
+    :all-administrations="allAdministrations"
+    :is-loading="isLoadingAdministrations"
+    @close="closeAssignmentsModal"
+  />
 </template>
 <script setup>
-import { ref, computed, onMounted, watch, watchEffect } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, watchEffect } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -174,8 +190,11 @@ import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
+import PvTab from 'primevue/tab';
+import PvTabList from 'primevue/tablist';
 import PvTabPanel from 'primevue/tabpanel';
-import PvTabView from 'primevue/tabview';
+import PvTabPanels from 'primevue/tabpanels';
+import PvTabs from 'primevue/tabs';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
@@ -183,12 +202,14 @@ import _debounce from 'lodash/debounce';
 import { useAuthStore } from '@/store/auth';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
+import { getAdministrationsByOrg } from '@/helpers/query/administrations';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
+import { useFullAdministrationsListQuery } from '@/composables/queries/useAdministrationsListQuery';
 import EditOrgsForm from '@/components/EditOrgsForm.vue';
 import RoarModal from '@/components/modals/RoarModal.vue';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
@@ -196,6 +217,7 @@ import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toast
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
 import AddGroupModal from '@/components/modals/AddGroupModal.vue';
+import GroupAssignmentsModal from '@/components/modals/GroupAssignmentsModal.vue';
 
 const router = useRouter();
 const initialized = ref(false);
@@ -225,6 +247,9 @@ const clearSearch = () => {
   sanitizedSearchString.value = '';
 };
 const isAddGroupModalVisible = ref(false);
+const isAssignmentsModalVisible = ref(false);
+const selectedOrgId = ref('');
+const selectedOrgName = ref('');
 
 const addUsers = () => {
   router.push({ name: 'Add Users' });
@@ -254,6 +279,16 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
+const activeOrgTypeValue = computed({
+  get() {
+    return Object.keys(orgHeaders.value)[activeIndex.value];
+  },
+  set(value) {
+    const keys = Object.keys(orgHeaders.value);
+    activeIndex.value = keys.indexOf(value);
+  }
+});
+
 const claimsLoaded = computed(() => !!userClaims?.value?.claims);
 
 const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
@@ -275,6 +310,18 @@ const {
 } = useOrgsTableQuery(activeOrgType, selectedDistrict, selectedSchool, orderBy, {
   enabled: claimsLoaded,
 });
+
+// Fetch all administrations for the assignments modal
+const {
+  data: administrationsData,
+  isLoading: isLoadingAdministrations,
+  isFetching: isFetchingAdministrations,
+} = useFullAdministrationsListQuery(orderBy, false, {
+  enabled: claimsLoaded,
+});
+
+// Extract the full administrations array for getAdministrationsByOrg
+const allAdministrations = computed(() => administrationsData.value?.administrations || []);
 
 // Filtered org data based on selected cohort site
 const filteredOrgData = computed(() => {
@@ -414,16 +461,26 @@ const tableColumns = computed(() => {
     columns.push();
   }
 
+  columns.push({
+    header: 'Users',
+    link: true,
+    routeName: 'ListUsers',
+    routeTooltip: 'View users',
+    routeLabel: 'Users',
+    routeIcon: 'pi pi-user',
+    sort: false,
+  });
+
+  // Add Assignments column for all org types
+  columns.push({
+    header: 'Assignments',
+    button: true,
+    eventName: 'assignments-button',
+    buttonIcon: 'pi pi-list',
+    sort: false,
+  });
+
   columns.push(
-    {
-      header: 'Users',
-      link: true,
-      routeName: 'ListUsers',
-      routeTooltip: 'View users',
-      routeLabel: 'Users',
-      routeIcon: 'pi pi-user',
-      sort: false,
-    },
     {
       header: 'Edit',
       button: true,
@@ -445,30 +502,55 @@ const tableColumns = computed(() => {
 });
 
 const tableData = ref([]);
+const isProcessingData = ref(false);
+
+const isTableLoading = computed(() => {
+  return (
+    isLoading.value ||
+    isFetching.value ||
+    isLoadingAdministrations.value ||
+    isFetchingAdministrations.value ||
+    isProcessingData.value
+  );
+});
 
 watchEffect(async () => {
-  if (isLoading.value) {
+  // Wait for both queries to be ready
+  if (isLoading.value || isLoadingAdministrations.value) {
     tableData.value = [];
     return;
   }
 
-  const mappedData = await Promise.all(
-    filteredOrgData?.value?.map(async (org) => {
-      const userCount = await countUsersByOrg(activeOrgType.value, org.id);
-      return {
-        ...org,
-        userCount,
-        routeParams: {
-          orgType: activeOrgType.value,
-          orgId: org.id,
-          orgName: org?.name || '_',
-          tooltip: 'View Users in ' + org?.name || '',
-        },
-      };
-    }) || [],
-  );
+  // Only process if we have both org data and administrations data
+  if (!filteredOrgData.value || !allAdministrations.value) {
+    return;
+  }
 
-  tableData.value = mappedData;
+  isProcessingData.value = true;
+
+  try {
+    const mappedData = await Promise.all(
+      filteredOrgData.value.map(async (org) => {
+        const userCount = await countUsersByOrg(activeOrgType.value, org.id);
+        const assignmentCount = getAdministrationsByOrg(org.id, activeOrgType.value, allAdministrations.value).length;
+        return {
+          ...org,
+          userCount,
+          assignmentCount,
+          routeParams: {
+            orgType: activeOrgType.value,
+            orgId: org.id,
+            orgName: org?.name || '_',
+            tooltip: 'View Users in ' + org?.name || '',
+          },
+        };
+      }),
+    );
+
+    tableData.value = mappedData;
+  } finally {
+    isProcessingData.value = false;
+  }
 });
 
 const showCode = async (selectedOrg) => {
@@ -482,6 +564,18 @@ const showCode = async (selectedOrg) => {
 const onEditButtonClick = (event) => {
   isEditModalEnabled.value = true;
   currentEditOrgId.value = _get(event, 'id', null);
+};
+
+const onAssignmentsButtonClick = (event) => {
+  selectedOrgId.value = _get(event, 'id', '');
+  selectedOrgName.value = _get(event, 'name', '');
+  isAssignmentsModalVisible.value = true;
+};
+
+const closeAssignmentsModal = () => {
+  isAssignmentsModalVisible.value = false;
+  selectedOrgId.value = '';
+  selectedOrgName.value = '';
 };
 
 const closeEditModal = () => {
@@ -538,6 +632,23 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
+});
+
+onUnmounted(() => {
+  // Cleanup subscriptions and reset state
+  if (unsubscribe) {
+    unsubscribe();
+  }
+
+  // Reset modal states
+  isAssignmentsModalVisible.value = false;
+  selectedOrgId.value = '';
+  selectedOrgName.value = '';
+
+  // Reset other states
+  isEditModalEnabled.value = false;
+  currentEditOrgId.value = null;
+  isDialogVisible.value = false;
 });
 
 watchEffect(() => {

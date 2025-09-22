@@ -14,9 +14,13 @@
     <!-- Dynamic Favicon -->
     <link rel="icon" :href="`/favicon-levante.ico`" />
   </Head>
-  <div v-if="isAuthStoreReady">
+  <div v-if="isAuthStoreReady" :class="`${authStore.showSideBar ? 'app app--sidebar' : 'app'}`">
     <PvToast position="bottom-center" />
-    <NavBar v-if="typeof $route.name === 'string' && !navbarBlacklist.includes($route.name)" />
+
+    <NavBar v-if="typeof $route.name === 'string' && !NAVBAR_BLACKLIST.includes($route.name)" />
+
+    <SideBar v-if="authStore.showSideBar" />
+
     <router-view :key="$route.fullPath" />
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
@@ -33,32 +37,18 @@ import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent } from 'v
 import { useRoute } from 'vue-router';
 import { Head } from '@unhead/vue/components';
 import PvToast from 'primevue/toast';
-import NavBar from '@/components/NavBar.vue';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { i18n } from '@/translations/i18n';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
+import NavBar from '@/components/NavBar.vue';
+import { NAVBAR_BLACKLIST } from './constants';
+import SideBar from '@/components/SideBar.vue';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
-const VueQueryDevtools = defineAsyncComponent({
-  loader: () => {
-    // Don't even attempt to load in CI environments
-    const isCI = import.meta.env.CI === 'true' || process.env.CI === 'true';
-    if (isCI) {
-      return Promise.resolve({ template: '<div></div>' });
-    }
-
-    return import('@tanstack/vue-query-devtools')
-      .then((module) => module.VueQueryDevtools)
-      .catch((error) => {
-        console.warn('Failed to load Vue Query Devtools:', error);
-        return { template: '<div></div>' };
-      });
-  },
-  errorComponent: { template: '<div></div>' },
-  loadingComponent: { template: '<div></div>' },
-  timeout: 3000, // Add timeout to prevent hanging
-});
+const VueQueryDevtools = defineAsyncComponent(() =>
+  import('@tanstack/vue-query-devtools').then((module) => module.VueQueryDevtools),
+);
 
 const isAuthStoreReady = ref(false);
 const showDevtools = ref(false);
@@ -83,58 +73,39 @@ const pageTitle = computed(() => {
   return 'Levante';
 });
 
-const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
-
-const navbarBlacklist = ref(['SignIn', 'Register', 'Maintenance', 'PlayApp', 'SWR', 'SRE', 'PA']);
+const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated());
 
 onBeforeMount(async () => {
-  try {
-    // Add timeout to prevent hanging indefinitely
-    const initWithTimeout = Promise.race([
-      authStore.initFirekit(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase initialization timeout')), 10000)),
-    ]);
+  await authStore.initFirekit();
 
-    await initWithTimeout;
+  await authStore.initStateFromRedirect().then(async () => {
+    // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
+    // @NOTE: Whilst the rest of the application relies on the user's ROAR UID, this callback requires the user's ID
+    // in order for SSO to work and cannot currently be changed without significant refactoring.
+    if (authStore.getUserId()) {
+      const userClaims = await fetchDocById('userClaims', authStore.getUserId());
+      authStore.setUserClaims(userClaims);
 
-    await authStore
-      .initStateFromRedirect()
-      .then(async () => {
-        // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
-        // @NOTE: Whilst the rest of the application relies on the user's ROAR UID, this callback requires the user's ID
-        // in order for SSO to work and cannot currently be changed without significant refactoring.
-        if (authStore.uid) {
-          const userClaims = await fetchDocById('userClaims', authStore.uid);
-          authStore.setUserClaims(userClaims);
-        }
-        if (authStore.roarUid) {
-          const userData = await fetchDocById('users', authStore.roarUid);
-          authStore.setUserData(userData);
-        }
-      })
-      .catch((error) => {
-        console.warn('Error during auth state initialization:', error);
-        // Continue anyway to allow app to load
-      });
-  } catch (error) {
-    console.error('Firebase initialization failed:', error);
-    // Allow app to continue loading even if Firebase fails
-    // This ensures the app doesn't hang indefinitely in CI
-  } finally {
-    // Always set auth store as ready to allow app to render
-    isAuthStoreReady.value = true;
-  }
+      const showSideBar = !userClaims?.claims?.super_admin && !userClaims?.claims?.admin;
+      authStore.setShowSideBar(showSideBar);
+    }
+
+    if (authStore.getUserId()) {
+      const userData = await fetchDocById('users', authStore.getUserId());
+      authStore.setUserData(userData);
+    }
+  });
+
+  isAuthStoreReady.value = true;
 });
 
 onMounted(() => {
   const isLocal = import.meta.env.MODE === 'development';
   const isDevToolsEnabled = import.meta.env.VITE_QUERY_DEVTOOLS_ENABLED === 'true';
-  const isCI = import.meta.env.CI === 'true' || process.env.CI === 'true';
 
-  // Only show devtools in local development, not in CI
-  if (isLocal && !isCI) {
+  if (isLocal) {
     showDevtools.value = true;
-  } else if (isDevToolsEnabled && !isCI) {
+  } else if (isDevToolsEnabled) {
     window.toggleDevtools = () => {
       showDevtools.value = !showDevtools.value;
     };

@@ -125,9 +125,12 @@ import { APP_ROUTES } from '@/constants/routes';
 import RoarModal from '@/components/modals/RoarModal.vue';
 import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
+import { getUserAssignments } from '@/helpers/query/assignments';
+import { useAssignmentsStore } from '@/store/assignments';
 
 const incorrect = ref(false);
 const authStore = useAuthStore();
+const assignmentsStore = useAssignmentsStore();
 const router = useRouter();
 const adminSignIn = ref(false);
 
@@ -135,7 +138,7 @@ const { spinner, ssoProvider, routeToProfile, roarfirekit } = storeToRefs(authSt
 const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
-  if (authStore.uid) {
+  if (authStore.getUserId()) {
     if (ssoProvider.value) {
       router.push({ path: APP_ROUTES.SSO });
     } else if (routeToProfile.value) {
@@ -157,13 +160,18 @@ const authWithGoogle = () => {
     authStore
       .signInWithGooglePopup()
       .then(async () => {
-        if (authStore.uid) {
-          const userClaims = await fetchDocById('userClaims', authStore.uid);
+        if (authStore.getUserId()) {
+          const userClaims = await fetchDocById('userClaims', authStore.getUserId());
           authStore.userClaims = userClaims;
-        }
-        if (authStore.roarUid) {
-          const userData = await fetchDocById('users', authStore.roarUid);
+
+          const userData = await fetchDocById('users', authStore.getUserId());
           authStore.userData = userData;
+
+          if (!authStore.isUserAdmin()) {
+            const userAssignments = await getUserAssignments(authStore.getUserId());
+            assignmentsStore.setUserAssignments(userAssignments || []);
+            authStore.setShowSideBar(true);
+          }
         }
       })
       .catch((e) => {
@@ -202,13 +210,18 @@ const authWithEmail = async (state) => {
     await authStore
       .logInWithEmailAndPassword(creds)
       .then(async () => {
-        if (authStore.uid) {
-          const userClaims = await fetchDocById('userClaims', authStore.uid);
+        if (authStore.getUserId()) {
+          const userClaims = await fetchDocById('userClaims', authStore.getUserId());
           authStore.userClaims = userClaims;
-        }
-        if (authStore.roarUid) {
-          const userData = await fetchDocById('users', authStore.roarUid);
+
+          const userData = await fetchDocById('users', authStore.getUserId());
           authStore.userData = userData;
+
+          if (!authStore.isUserAdmin()) {
+            const userAssignments = await getUserAssignments(authStore.getUserId());
+            assignmentsStore.setUserAssignments(userAssignments || []);
+            authStore.setShowSideBar(true);
+          }
         }
 
         spinner.value = true;

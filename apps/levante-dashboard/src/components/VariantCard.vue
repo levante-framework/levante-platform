@@ -18,12 +18,14 @@
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="'View parameters'"
+              v-tooltip.top="tooltip('View parameters')"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
-          <div v-if="variant?.variant?.params?.cat" class="flex ml-2">
-            <PvChip class="bg-primary text-white h-2rem" label="CAT" />
+          <div class="flex ml-2 gap-2">
+            <div v-if="variant?.variant?.params?.cat">
+              <PvChip class="bg-primary text-white h-2rem" label="CAT" />
+            </div>
           </div>
         </div>
         <div class="pl-2 w-full">
@@ -38,7 +40,7 @@
               class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
               @click="visible = true"
               ><i
-                v-tooltip.top="'Click to expand'"
+                v-tooltip.top="tooltip('Click to expand')"
                 class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100"
               ></i
             ></PvButton>
@@ -109,7 +111,7 @@
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="'View parameters'"
+              v-tooltip.top="tooltip('View parameters')"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
@@ -134,7 +136,7 @@
             class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
             @click="visible = true"
             ><i
-              v-tooltip.top="'Click to expand'"
+              v-tooltip.top="tooltip('Click to expand')"
               class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100"
             ></i
           ></PvButton>
@@ -275,6 +277,8 @@ import PvDialog from 'primevue/dialog';
 import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
 import EditVariantDialog from '@/components/EditVariantDialog.vue';
+import { getLanguageInfo } from '@/helpers/languageDiscovery';
+import { tooltip } from '@/helpers';
 
 interface Condition {
   field: string;

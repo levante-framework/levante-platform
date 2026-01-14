@@ -7,160 +7,173 @@
       </div>
 
       <template v-else>
-        <div class="flex justify-content-between align-items-center">
-          <div class="flex flex-column align-items-start mb-4 gap-2">
-            <div>
-              <div class="uppercase font-light text-gray-500 text-md">{{ displayOrgType }} Progress Report</div>
-              <div class="report-title uppercase">
-                {{ orgData?.name }}
-              </div>
-            </div>
-            <div>
-              <div class="uppercase font-light text-gray-500 text-md">Assignment</div>
-              <div class="administration-name uppercase">
-                {{ displayName }}
-              </div>
-            </div>
-            <div>
-              <div class="uppercase font-light text-gray-500 text-md">Created by</div>
-              <div class="administration-creator">
-                {{ creator?.displayName }}
-              </div>
-            </div>
-          </div>
-          <div v-if="!isLevante" class="flex flex-row align-items-center gap-4">
-            <div class="uppercase text-sm text-gray-600">VIEW</div>
-            <PvSelectButton
-              v-model="reportView"
-              v-tooltip.top="tooltip('View different report', { showDelay: 0 })"
-              :options="reportViews"
-              option-disabled="constant"
-              :allow-empty="false"
-              option-label="name"
-              class="flex my-2 select-button"
-              @change="handleViewChange"
-            >
-            </PvSelectButton>
+        <div
+          v-if="isAssignmentsError"
+          class="flex justify-content-center align-items-center"
+          style="min-height: calc(100vh - 8rem)"
+        >
+          <div style="max-width: 48rem; text-align: center">
+            <div class="text-lg font-semibold text-gray-700">There was a problem fetching the assignment details.</div>
+            <div class="mt-2 text-sm text-gray-500">Please refresh the page or try again later.</div>
           </div>
         </div>
 
-        <div v-if="assignmentData?.length">
-          <div
-            v-if="!isEmpty(adminStats)"
-            class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-2 details-card"
-          >
-            <div class="flex flex-column gap-1 mx-5 mb-5">
-              <div class="text-sm uppercase text-gray-500">Progress by Task</div>
-              <div
-                v-for="{ taskId } of administrationData.assessments"
-                :key="taskId"
-                class="flex justify-content-between align-items-center"
+        <template v-else>
+          <div class="flex justify-content-between align-items-center">
+            <div class="flex flex-column align-items-start mb-4 gap-2">
+              <div>
+                <div class="uppercase font-light text-gray-500 text-md">{{ displayOrgType }} Progress Report</div>
+                <div class="report-title">
+                  {{ orgData?.name }}
+                </div>
+              </div>
+              <div>
+                <div class="uppercase font-light text-gray-500 text-md">Assignment</div>
+                <div class="administration-name">
+                  {{ assignmentDisplayName }}
+                </div>
+              </div>
+              <div>
+                <div class="uppercase font-light text-gray-500 text-md">Created by</div>
+                <div class="administration-creator">
+                  {{ creatorName }}
+                </div>
+              </div>
+            </div>
+            <div v-if="!isLevante" class="flex flex-row align-items-center gap-4">
+              <div class="uppercase text-sm text-gray-600">VIEW</div>
+              <PvSelectButton
+                v-model="reportView"
+                v-tooltip.top="getTooltip('View different report', { showDelay: 0 })"
+                :options="reportViews"
+                option-disabled="constant"
+                :allow-empty="false"
+                option-label="name"
+                class="flex my-2 select-button"
+                @change="handleViewChange"
               >
-                <div class="text-lg font-bold text-gray-600 w-full">
-                  {{ tasksDictionary[taskId]?.name || taskId }}
-                </div>
-                <PvChart
-                  type="bar"
-                  :data="setBarChartData(adminStats[taskId])"
-                  :options="setBarChartOptions(adminStats[taskId])"
-                  class="h-2rem lg:w-full"
-                />
-              </div>
-            </div>
-            <div class="flex flex-column mx-5">
-              <div class="text-sm uppercase text-gray-500">Total Progress</div>
-              <div class="flex justify-content-between align-items-center">
-                <div class="text-xl font-bold text-gray-600 w-full">
-                  Total
-                  <span class="font-light text-sm"> (Assigned to {{ adminStats.assignment.assigned }} users) </span>
-                </div>
-                <PvChart
-                  type="bar"
-                  :data="setBarChartData(adminStats.assignment)"
-                  :options="setBarChartOptions(adminStats.assignment)"
-                  class="h-3rem lg:w-full"
-                />
-              </div>
-            </div>
-            <div class="flex flex-column align-items-center mx-5">
-              <div class="flex flex-wrap justify-content-around align-items-center px-2 py-1 rounded">
-                <div class="legend-entry">
-                  <div class="circle" style="background-color: var(--bright-green)" />
-                  <div>
-                    <div>Completed</div>
-                  </div>
-                </div>
-                <div class="legend-entry">
-                  <div class="circle" style="background-color: var(--yellow-100)" />
-                  <div>
-                    <div>Started</div>
-                  </div>
-                </div>
-                <div class="legend-entry">
-                  <div class="circle" style="background-color: var(--surface-d)" />
-                  <div>
-                    <div>Not Started</div>
-                  </div>
-                </div>
-              </div>
-              <div v-if="!isLevante" class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
+              </PvSelectButton>
             </div>
           </div>
-          <RoarDataTable
-            v-if="progressReportColumns?.length ?? 0 > 0"
-            :data="filteredTableData"
-            :columns="progressReportColumns"
-            :total-records="filteredTableData?.length"
-            :loading="isLoadingAssignments || isFetchingAssignments"
-            :page-limit="pageLimit"
-            data-cy="roar-data-table"
-            :allow-filtering="!isLevante"
-            :reset-filters="resetFilters"
-            :allow-export="!isLevante"
-            :allow-column-selection="!isLevante"
-            :lazy-pre-sorting="orderBy"
-            :show-options-control="false"
-            @export-selected="exportSelected"
-            @export-all="exportAll"
-          >
-            <template #filterbar>
-              <div v-if="!isLevante">
-                <div v-if="districtSchoolsData" class="flex flex-row gap-2">
-                  <PvFloatLabel>
-                    <PvMultiSelect
-                      id="ms-school-filter"
-                      v-model="filterSchools"
-                      style="width: 20rem; max-width: 25rem"
-                      :options="districtSchoolsData"
-                      option-label="name"
-                      option-value="name"
-                      :show-toggle-all="false"
-                      selected-items-label="{0} schools selected"
-                      data-cy="filter-by-school"
-                    />
-                    <label for="ms-school-filter">Filter by School</label>
-                  </PvFloatLabel>
-                </div>
-                <div class="flex flex-row gap-2">
-                  <PvFloatLabel>
-                    <PvMultiSelect
-                      id="ms-grade-filter"
-                      v-model="filterGrades"
-                      style="width: 20rem; max-width: 25rem"
-                      :options="gradeOptions"
-                      option-label="label"
-                      option-value="value"
-                      :show-toggle-all="false"
-                      selected-items-label="{0} grades selected"
-                      data-cy="filter-by-grade"
-                    />
-                    <label for="ms-school-filter">Filter by Grade</label>
-                  </PvFloatLabel>
+
+          <div v-if="assignmentData?.length">
+            <div
+              v-if="!isEmpty(adminStats)"
+              class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-2 details-card"
+            >
+              <div class="flex flex-column gap-1 mx-5 mb-5">
+                <div class="text-sm uppercase text-gray-500">Progress by Task</div>
+                <div
+                  v-for="{ taskId } of administrationData.assessments"
+                  :key="taskId"
+                  class="flex justify-content-between align-items-center"
+                >
+                  <div class="text-lg font-bold text-gray-600 w-full">
+                    {{ tasksDictionary[taskId]?.name || taskId }}
+                  </div>
+                  <PvChart
+                    type="bar"
+                    :data="setBarChartData(adminStats[taskId])"
+                    :options="setBarChartOptions(adminStats[taskId])"
+                    class="h-2rem lg:w-full"
+                  />
                 </div>
               </div>
-            </template>
-          </RoarDataTable>
-        </div>
+              <div class="flex flex-column mx-5">
+                <div class="text-sm uppercase text-gray-500">Total Progress</div>
+                <div class="flex justify-content-between align-items-center">
+                  <div class="text-xl font-bold text-gray-600 w-full">
+                    Total
+                    <span class="font-light text-sm"> (Assigned to {{ adminStats.assignment.assigned }} users) </span>
+                  </div>
+                  <PvChart
+                    type="bar"
+                    :data="setBarChartData(adminStats.assignment)"
+                    :options="setBarChartOptions(adminStats.assignment)"
+                    class="h-3rem lg:w-full"
+                  />
+                </div>
+              </div>
+              <div class="flex flex-column align-items-center mx-5">
+                <div class="flex flex-wrap justify-content-around align-items-center px-2 py-1 rounded">
+                  <div class="legend-entry">
+                    <div class="circle" style="background-color: var(--bright-green)" />
+                    <div>
+                      <div>Completed</div>
+                    </div>
+                  </div>
+                  <div class="legend-entry">
+                    <div class="circle" style="background-color: var(--yellow-100)" />
+                    <div>
+                      <div>Started</div>
+                    </div>
+                  </div>
+                  <div class="legend-entry">
+                    <div class="circle" style="background-color: var(--surface-d)" />
+                    <div>
+                      <div>Not Started</div>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="!isLevante" class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
+              </div>
+            </div>
+            <RoarDataTable
+              v-if="progressReportColumns?.length ?? 0 > 0"
+              :data="filteredTableData"
+              :columns="progressReportColumns"
+              :total-records="filteredTableData?.length"
+              :loading="isLoadingAssignments || isFetchingAssignments"
+              :page-limit="pageLimit"
+              data-cy="roar-data-table"
+              :allow-filtering="!isLevante"
+              :reset-filters="resetFilters"
+              :allow-export="true"
+              :allow-column-selection="!isLevante"
+              :lazy-pre-sorting="orderBy"
+              :show-options-control="false"
+              @export-selected="exportSelected"
+              @export-all="exportAll"
+            >
+              <template #filterbar>
+                <div v-if="!isLevante">
+                  <div v-if="districtSchoolsData" class="flex flex-row gap-2">
+                    <PvFloatLabel>
+                      <PvMultiSelect
+                        id="ms-school-filter"
+                        v-model="filterSchools"
+                        style="width: 20rem; max-width: 25rem"
+                        :options="districtSchoolsData"
+                        option-label="name"
+                        option-value="name"
+                        :show-toggle-all="false"
+                        selected-items-label="{0} schools selected"
+                        data-cy="filter-by-school"
+                      />
+                      <label for="ms-school-filter">Filter by School</label>
+                    </PvFloatLabel>
+                  </div>
+                  <div class="flex flex-row gap-2">
+                    <PvFloatLabel>
+                      <PvMultiSelect
+                        id="ms-grade-filter"
+                        v-model="filterGrades"
+                        style="width: 20rem; max-width: 25rem"
+                        :options="gradeOptions"
+                        option-label="label"
+                        option-value="value"
+                        :show-toggle-all="false"
+                        selected-items-label="{0} grades selected"
+                        data-cy="filter-by-grade"
+                      />
+                      <label for="ms-school-filter">Filter by Grade</label>
+                    </PvFloatLabel>
+                  </div>
+                </div>
+              </template>
+            </RoarDataTable>
+          </div>
+        </template>
       </template>
     </section>
   </main>
@@ -173,33 +186,29 @@ import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
+import _startCase from 'lodash/startCase';
 import PvChart from 'primevue/chart';
 import PvMultiSelect from 'primevue/multiselect';
 import PvSelectButton from 'primevue/selectbutton';
 import { useAuthStore } from '@/store/auth';
-import useUserType from '@/composables/useUserType';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useAdministrationsStatsQuery from '@/composables/queries/useAdministrationsStatsQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import { exportCsv } from '@/helpers/query/utils';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports';
-import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
-import { isLevante, tooltip } from '@/helpers';
+import { isLevante, getTooltip } from '@/helpers';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import { isEmpty } from 'lodash';
 import PvFloatLabel from 'primevue/floatlabel';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
-// import ProgressChartLegend from '@/components/reports/ProgressChartLegend.vue'; // File does not exist
-// import ProgressChart from '@/components/reports/ProgressChart.vue'; // File does not exist
+
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -223,6 +232,47 @@ const props = defineProps({
 
 const initialized = ref(false);
 
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
+  enabled: initialized,
+});
+
+const { data: administrationData, isLoading: isLoadingAdministration } = useAdministrationsQuery([props.administrationId], {
+  enabled: initialized,
+  select: (data) => data[0],
+});
+
+const { data: adminStats, isLoading: isLoadingAdminStats } = useAdministrationsStatsQuery([props.administrationId], {
+  enabled: initialized,
+  select: (data) => data[0],
+});
+
+const { data: districtSchoolsData, isLoading: isLoadingDistrictSchools } = useDistrictSchoolsQuery(props.orgId, {
+  enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
+});
+
+const { data: orgData, isLoading: isLoadingOrg } = useOrgQuery(props.orgType, [props.orgId], {
+  enabled: initialized,
+  select: (data) => data[0],
+});
+
+const hasSurveyInAssignment = computed(() => {
+  const assessments = administrationData.value?.assessments ?? [];
+  return assessments.some(({ taskId }) => taskId === 'survey');
+});
+
+const {
+  isLoading: isLoadingAssignments,
+  isFetching: isFetchingAssignments,
+  isError: isAssignmentsError,
+  data: assignmentData,
+} = useAdministrationAssignmentsQuery(props.administrationId, props.orgType, props.orgId, hasSurveyInAssignment, {
+  enabled: initialized,
+});
+
+const creatorName = computed(() => {
+  return administrationData.value.creatorName;
+});
+
 const displayOrgType = computed(() => {
   if (props.orgType === 'district') {
     return 'Site';
@@ -232,7 +282,16 @@ const displayOrgType = computed(() => {
   return props.orgType;
 });
 
-const isLoading = computed(() => isLoadingAssignments.value || isLoadingTasksDictionary.value);
+const isLoading = computed(
+  () =>
+    !initialized.value ||
+    isLoadingAssignments.value ||
+    isLoadingTasksDictionary.value ||
+    isLoadingAdministration.value ||
+    isLoadingAdminStats.value ||
+    isLoadingDistrictSchools.value ||
+    isLoadingOrg.value,
+);
 
 const reportView = ref({ name: 'Progress Report', constant: true });
 const reportViews = [
@@ -240,12 +299,7 @@ const reportViews = [
   { name: 'Score Report', constant: false },
 ];
 
-const displayName = computed(() => {
-  if (administrationData.value) {
-    return getTitle(administrationData.value, isSuperAdmin.value);
-  }
-  return '';
-});
+const assignmentDisplayName = computed(() => administrationData.value.name);
 
 const handleViewChange = () => {
   const { administrationId, orgType, orgId } = props;
@@ -281,83 +335,89 @@ const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
 
-const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
-  enabled: initialized,
-});
+const CSV_NOT_ASSIGNED_VALUE = 'Not Assigned';
 
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
+const orderedTaskIds = computed(() => {
+  const taskIds = administrationData.value?.assessments?.map((assessment) => assessment.taskId) ?? [];
+  const sortedTasks = [...taskIds].sort((p1, p2) => {
+    if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
+      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
+    } else {
+      return -1;
+    }
+  });
 
-const { isSuperAdmin } = useUserType(userClaims);
+  const priorityTasks = ['swr', 'sre', 'pa'];
+  const ordered = [];
 
-const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
-  enabled: initialized,
-  select: (data) => data[0],
-});
-
-const createdBy = computed(() => administrationData?.value?.createdBy);
-
-const { data: creator } = useUserDataQuery(createdBy, {
-  enabled: computed(() => !!createdBy.value),
-});
-
-const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], {
-  enabled: initialized,
-  select: (data) => data[0],
-});
-
-const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
-  enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
-});
-
-const { data: orgData } = useOrgQuery(props.orgType, [props.orgId], {
-  enabled: initialized,
-  select: (data) => data[0],
-});
-
-const {
-  isLoading: isLoadingAssignments,
-  isFetching: isFetchingAssignments,
-  data: assignmentData,
-} = useAdministrationAssignmentsQuery(props.administrationId, props.orgType, props.orgId, {
-  enabled: initialized,
-});
-
-const schoolNameDictionary = computed(() => {
-  if (districtSchoolsData.value) {
-    return districtSchoolsData.value.reduce((acc, school) => {
-      acc[school.id] = school.name;
-      return acc;
-    }, {});
-  } else {
-    return {};
+  for (const task of priorityTasks) {
+    if (sortedTasks.includes(task)) {
+      ordered.push(task);
+    }
   }
+
+  for (const task of sortedTasks) {
+    if (!priorityTasks.includes(task)) {
+      ordered.push(task);
+    }
+  }
+
+  return ordered;
 });
+
+const getTaskColumnLabel = (taskId) => {
+  if (tasksDictionary.value?.[taskId]?.publicName) {
+    return tasksDictionary.value[taskId].publicName;
+  }
+  if (tasksDictionary.value?.[taskId]?.name) {
+    return tasksDictionary.value[taskId].name;
+  }
+  return _startCase(taskId);
+};
+
+const appendTaskProgressColumns = (row, progress = {}) => {
+  const addTaskValue = (taskId) => {
+    const columnLabel = getTaskColumnLabel(taskId);
+    row[columnLabel] = progress?.[taskId]?.value ?? CSV_NOT_ASSIGNED_VALUE;
+  };
+
+  orderedTaskIds.value.forEach(addTaskValue);
+};
+
+const buildProgressExportRow = (user, progress = {}) => {
+  const tableRow = {
+    Username: _get(user, 'username') ?? '',
+    'User Type': _startCase(_get(user, 'userType') ?? ''),
+  };
+
+  if (props.orgType === 'district') {
+    tableRow.School = _get(user, 'schoolName') ?? '';
+  }
+
+  appendTaskProgressColumns(tableRow, progress);
+
+  return tableRow;
+};
+
+const buildExportData = (rows) => {
+  if (!rows) return [];
+  return _map(rows, ({ user, progress }) => buildProgressExportRow(user, progress));
+};
 
 const computedProgressData = computed(() => {
   if (!assignmentData.value) return [];
   // assignmentTableData is an array of objects, each representing a row in the table
   const assignmentTableDataAcc = [];
 
-  for (const { assignment, user, survey } of assignmentData.value) {
-    // compute schoolName
-    let schoolName = '';
-    const schoolId = user?.schools?.current[0];
-    if (schoolId) {
-      schoolName = schoolNameDictionary.value[schoolId];
-    }
-
+  for (const { assignment, user } of assignmentData.value) {
     const currRow = {
+
       user: {
         username: user?.username || assignment?.userData?.username || '',
-        userType: user.userType,
+        userType: user.userType === 'parent' ? 'caregiver' : user.userType,
         userId: user.userId,
-        firstName: user?.name?.first || '',
-        lastName: user?.name?.last || '',
         grade: user.studentData?.grade,
         assessmentPid: user.assessmentPid,
-        schoolName: schoolName,
       },
       // compute and add progress data in next step
     };
@@ -416,124 +476,27 @@ const resetFilters = () => {
 };
 
 const exportSelected = (selectedRows) => {
-  const computedExportData = _map(selectedRows, ({ user, progress }) => {
-    let tableRow = {
-      Email: _get(user, 'email'),
-      First: _get(user, 'firstName'),
-      Last: _get(user, 'lastName'),
-      Grade: _get(user, 'grade'),
-    };
-    if (authStore.isUserSuperAdmin()) {
-      tableRow['PID'] = _get(user, 'assessmentPid');
-    }
-    if (props.orgType === 'district') {
-      tableRow['School'] = _get(user, 'schoolName');
-    }
-    for (const taskId in progress) {
-      tableRow[tasksDictionary.value[taskId]?.publicName ?? taskId] = progress[taskId].value;
-    }
-    return tableRow;
-  });
-  exportCsv(computedExportData, 'roar-progress-selected.csv');
-  return;
+  const computedExportData = buildExportData(selectedRows);
+  exportCsv(computedExportData, 'progress-selected.csv');
 };
 
 const exportAll = async () => {
-  const computedExportData = _map(computedProgressData.value, ({ user, progress }) => {
-    let tableRow = {
-      Email: _get(user, 'email'),
-      First: _get(user, 'firstName'),
-      Last: _get(user, 'lastName'),
-      Grade: _get(user, 'grade'),
-    };
-    if (authStore.isUserSuperAdmin()) {
-      tableRow['PID'] = _get(user, 'assessmentPid');
-    }
-    if (props.orgType === 'district') {
-      tableRow['School'] = _get(user, 'schoolName');
-    }
-    for (const taskId in progress) {
-      tableRow[tasksDictionary.value[taskId]?.publicName ?? taskId] = progress[taskId].value;
-    }
-    return tableRow;
-  });
-  exportCsv(
-    computedExportData,
-    `roar-progress-${_kebabCase(getTitle(administrationData.value, isSuperAdmin.value))}-${_kebabCase(
-      orgData.value.name,
-    )}.csv`,
-  );
-  return;
+  const computedExportData = buildExportData(computedProgressData.value);
+  const administrationTitle = administrationData.value?.name ?? 'progress';
+  const orgName = orgData.value?.name ?? 'organization';
+  const formattedFileName = `progress-report-${_kebabCase(administrationTitle)}-${_kebabCase(orgName) || 'org'}.csv`;
+  exportCsv(computedExportData, formattedFileName);
 };
 
 const progressReportColumns = computed(() => {
   if (isLoadingTasksDictionary.value || assignmentData.value === undefined) return [];
 
-  const tableColumns = [];
-  const columnDefinitions = [{ field: 'user.email', header: 'Email', pinned: true }];
+  const tableColumns = [
+    { field: 'user.username', header: 'Username', dataType: 'text', sort: true, filter: true },
+    { field: 'user.userType', header: 'User Type', dataType: 'text', sort: true, filter: true },
+  ];
 
-  columnDefinitions.forEach(({ field, header, pinned }) => {
-    const path = field.split('.');
-    if (assignmentData.value.find((assignment) => _get(assignment, path))) {
-      tableColumns.push({
-        field,
-        header,
-        dataType: 'text',
-        sort: true,
-        filter: true,
-        ...(pinned && { pinned: true }),
-      });
-    }
-  });
-
-  tableColumns.push({
-    field: 'user.username',
-    header: 'Username',
-    dataType: 'text',
-    sort: true,
-    filter: true,
-  });
-
-  if (props.orgType === 'district') {
-    const schoolsMap = districtSchoolsData.value?.reduce((acc, school) => {
-      acc[school.id] = school.name;
-      return acc;
-    }, {});
-    tableColumns.push({
-      field: 'user.schoolName',
-      header: 'School',
-      dataType: 'text',
-      sort: true,
-      filter: false,
-      schoolsMap: schoolsMap,
-    });
-  }
-
-  const allTaskIds = administrationData.value.assessments?.map((assessment) => assessment.taskId);
-  const sortedTasks = allTaskIds?.sort((p1, p2) => {
-    if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
-      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-    } else {
-      return -1;
-    }
-  });
-
-  const priorityTasks = ['swr', 'sre', 'pa'];
-  const orderedTasks = [];
-
-  for (const task of priorityTasks) {
-    if (sortedTasks.includes(task)) {
-      orderedTasks.push(task);
-    }
-  }
-
-  for (const task of sortedTasks) {
-    if (!priorityTasks.includes(task)) {
-      orderedTasks.push(task);
-    }
-  }
-
-  for (const taskId of orderedTasks) {
+  for (const taskId of orderedTaskIds.value) {
     tableColumns.push({
       field: `progress.${taskId}.value`,
       filterField: `progress.${taskId}.tags`,

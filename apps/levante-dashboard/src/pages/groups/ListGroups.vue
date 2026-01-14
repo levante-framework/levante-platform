@@ -5,12 +5,14 @@
         <div class="flex flex-column align-items-start mb-2 md:flex-row w-full justify-content-between">
           <div class="flex align-items-center gap-3 mb-4 md:mb-0">
             <div class="admin-page-header mr-4">Groups</div>
-            <PvButton
-              class="bg-primary text-white border-none p-2 ml-auto"
-              data-testid="add-group-btn"
-              @click="isAddGroupModalVisible = true"
-              >Add Group</PvButton
-            >
+            <PermissionGuard :requiredRole="ROLES.SITE_ADMIN">
+              <PvButton
+                class="bg-primary text-white border-none p-2 ml-auto"
+                data-testid="add-group-btn"
+                @click="isAddGroupModalVisible = true"
+                >Add Group</PvButton
+              >
+            </PermissionGuard>
             <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
               data-testid="add-users-btn"
@@ -27,61 +29,63 @@
           </div>
         </div>
       </div>
-      <PvTabs v-if="claimsLoaded" v-model:value="activeOrgTypeValue" lazy class="mb-7">
+      <PvTabs v-if="claimsLoaded" v-model:value="activeOrgType" lazy class="mb-7">
         <PvTabList>
           <PvTab v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">{{ orgType.header }}</PvTab>
         </PvTabList>
         <PvTabPanels>
           <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">
-          <div class="grid column-gap-3 mt-2">
-            <div
-              v-if="activeOrgType === 'schools' || activeOrgType === 'classes' || activeOrgType === 'groups'"
-              class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
-            >
-              <PvFloatLabel>
-                <PvSelect
-                  v-model="selectedDistrict"
-                  input-id="district"
-                  :options="allDistricts"
-                  option-label="name"
-                  option-value="id"
-                  :loading="isLoadingDistricts"
-                  class="w-full"
-                  data-cy="dropdown-parent-district"
-                />
-                <label for="district">Sites</label>
-              </PvFloatLabel>
+            <div class="grid column-gap-3 mt-2">
+              <div
+                v-if="!shouldUsePermissions && orgType.id !== 'districts'"
+                class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
+              >
+                <PvFloatLabel>
+                  <PvSelect
+                    v-model="selectedDistrict"
+                    input-id="district"
+                    :options="districtsData"
+                    option-label="name"
+                    option-value="id"
+                    :loading="isLoadingDistricts"
+                    class="w-full"
+                    data-cy="dropdown-selected-district"
+                    showClear
+                  />
+                  <label for="district">Select site</label>
+                </PvFloatLabel>
+              </div>
+
+              <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+                <PvFloatLabel>
+                  <PvSelect
+                    v-model="selectedSchool"
+                    input-id="school"
+                    :options="schoolsData"
+                    option-label="name"
+                    option-value="id"
+                    :loading="isLoadingSchools"
+                    class="w-full"
+                    data-cy="dropdown-parent-school"
+                    showClear
+                  />
+                  <label for="school">Select school</label>
+                </PvFloatLabel>
+              </div>
             </div>
-            <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-              <PvFloatLabel>
-                <PvSelect
-                  v-model="selectedSchool"
-                  input-id="school"
-                  :options="allSchools"
-                  option-label="name"
-                  option-value="id"
-                  :loading="isLoadingSchools"
-                  class="w-full"
-                  data-cy="dropdown-parent-school"
-                />
-                <label for="school">School</label>
-              </PvFloatLabel>
-            </div>
-          </div>
-          <RoarDataTable
-            :key="tableKey"
-            :columns="tableColumns"
-            :data="filteredTableData ?? []"
-            sortable
-            :loading="isTableLoading"
-            :allow-filtering="false"
-            @export-all="exportAll"
-            @selected-org-id="showCode"
-            @export-org-users="(orgId) => exportOrgUsers(orgId)"
-            @edit-button="onEditButtonClick($event)"
-            @assignments-button="onAssignmentsButtonClick($event)"
-          />
-        </PvTabPanel>
+            <RoarDataTable
+              :key="tableKey"
+              :columns="tableColumns"
+              :data="filteredTableData"
+              sortable
+              :loading="isTableLoading"
+              :allow-filtering="false"
+              @selected-org-id="showCode"
+              @export-org-users="(orgId) => exportOrgUsers(orgId)"
+              @edit-button="onEditButtonClick($event)"
+              @assignments-button="onAssignmentsButtonClick($event)"
+            />
+          </PvTabPanel>
         </PvTabPanels>
       </PvTabs>
     </section>
@@ -200,14 +204,9 @@ import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
 import _debounce from 'lodash/debounce';
 import { useAuthStore } from '@/store/auth';
-import { orgFetchAll } from '@/helpers/query/orgs';
 import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
 import { getAdministrationsByOrg } from '@/helpers/query/administrations';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
-import useUserType from '@/composables/useUserType';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
-import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
 import { useFullAdministrationsListQuery } from '@/composables/queries/useAdministrationsListQuery';
 import EditOrgsForm from '@/components/EditOrgsForm.vue';
@@ -218,6 +217,12 @@ import RoarDataTable from '@/components/RoarDataTable.vue';
 import PvFloatLabel from 'primevue/floatlabel';
 import AddGroupModal from '@/components/modals/AddGroupModal.vue';
 import GroupAssignmentsModal from '@/components/modals/GroupAssignmentsModal.vue';
+import PermissionGuard from '@/components/PermissionGuard.vue';
+import { ROLES } from '@/constants/roles';
+import { normalizeToLowercase } from '@/helpers';
+import _useDistrictsQuery from '@/composables/queries/_useDistrictsQuery';
+import _useSchoolsQuery from '@/composables/queries/_useSchoolsQuery';
+import { usePermissions } from '@/composables/usePermissions';
 
 const router = useRouter();
 const initialized = ref(false);
@@ -246,6 +251,7 @@ const clearSearch = () => {
   searchQuery.value = '';
   sanitizedSearchString.value = '';
 };
+
 const isAddGroupModalVisible = ref(false);
 const isAssignmentsModalVisible = ref(false);
 const selectedOrgId = ref('');
@@ -256,14 +262,12 @@ const addUsers = () => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { currentSite, roarfirekit, shouldUsePermissions, userClaims } = storeToRefs(authStore);
+const { isUserSuperAdmin } = authStore;
+const { hasMinimumRole } = usePermissions();
 
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const { isSuperAdmin } = useUserType(userClaims);
-const adminOrgs = computed(() => userClaims?.value?.claims?.adminOrgs);
+const claimsLoaded = computed(() => !!userClaims.value?.claims);
+const selectedSite = computed(() => (shouldUsePermissions.value ? currentSite.value : selectedDistrict.value));
 
 const orgHeaders = computed(() => {
   return {
@@ -275,39 +279,40 @@ const orgHeaders = computed(() => {
 });
 
 const activeIndex = ref(0);
-const activeOrgType = computed(() => {
-  return Object.keys(orgHeaders.value)[activeIndex.value];
-});
 
-const activeOrgTypeValue = computed({
+const activeOrgType = computed({
   get() {
     return Object.keys(orgHeaders.value)[activeIndex.value];
   },
   set(value) {
     const keys = Object.keys(orgHeaders.value);
     activeIndex.value = keys.indexOf(value);
+  },
+});
+
+const { data: districtsData, isLoading: isLoadingDistricts } = _useDistrictsQuery({
+  enabled: !shouldUsePermissions.value,
+});
+
+watch(districtsData, (newDistrictsData) => {
+  if (newDistrictsData && !isUserSuperAdmin()) {
+    selectedDistrict.value = _get(_head(newDistrictsData), 'id');
   }
 });
 
-const claimsLoaded = computed(() => !!userClaims?.value?.claims);
+const { data: schoolsData, isLoading: isLoadingSchools } = _useSchoolsQuery(selectedSite);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
-  enabled: claimsLoaded,
-});
-
-const schoolQueryEnabled = computed(() => {
-  return claimsLoaded.value && !!selectedDistrict.value;
-});
-
-const { isLoading: isLoadingSchools, data: allSchools } = useDistrictSchoolsQuery(selectedDistrict, {
-  enabled: schoolQueryEnabled,
+watch(schoolsData, (newSchoolsData) => {
+  if (newSchoolsData && !isUserSuperAdmin()) {
+    selectedSchool.value = _get(_head(newSchoolsData), 'id');
+  }
 });
 
 const {
   isLoading,
   isFetching,
   data: orgData,
-} = useOrgsTableQuery(activeOrgType, selectedDistrict, selectedSchool, orderBy, {
+} = useOrgsTableQuery(activeOrgType, selectedSite, selectedSchool, orderBy, {
   enabled: claimsLoaded,
 });
 
@@ -322,15 +327,6 @@ const {
 
 // Extract the full administrations array for getAdministrationsByOrg
 const allAdministrations = computed(() => administrationsData.value?.administrations || []);
-
-// Filtered org data based on selected cohort site
-const filteredOrgData = computed(() => {
-  if (activeOrgType.value !== 'groups' || !selectedDistrict.value || !orgData.value) {
-    return orgData.value;
-  }
-
-  return orgData.value.filter((org) => org.parentOrgId === selectedDistrict.value);
-});
 
 function copyToClipboard(text) {
   navigator.clipboard
@@ -352,18 +348,6 @@ function copyToClipboard(text) {
       });
     });
 }
-
-const exportAll = async () => {
-  const exportData = await orgFetchAll(
-    activeOrgType,
-    selectedDistrict,
-    selectedSchool,
-    orderBy,
-    isSuperAdmin,
-    adminOrgs,
-  );
-  exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
-};
 
 /**
  * Exports users of a given organization type to a CSV file.
@@ -455,6 +439,12 @@ const tableColumns = computed(() => {
       pinned: true,
       sort: true,
     },
+    {
+      field: 'creatorName',
+      header: 'Created By',
+      dataType: 'string',
+      sort: true,
+    },
   ];
 
   if (['districts', 'schools'].includes(activeOrgType.value)) {
@@ -480,23 +470,24 @@ const tableColumns = computed(() => {
     sort: false,
   });
 
-  columns.push(
-    {
+  if (hasMinimumRole(ROLES.SITE_ADMIN)) {
+    columns.push({
       header: 'Edit',
       button: true,
       eventName: 'edit-button',
       buttonIcon: 'pi pi-pencil',
       sort: false,
-    },
-    // {
-    //   header: 'Export Users',
-    //   buttonLabel: 'Export Users',
-    //   button: true,
-    //   eventName: 'export-org-users',
-    //   buttonIcon: 'pi pi-download mr-2',
-    //   sort: false,
-    // },
-  );
+    });
+  }
+
+  // {
+  //   header: 'Export Users',
+  //   buttonLabel: 'Export Users',
+  //   button: true,
+  //   eventName: 'export-org-users',
+  //   buttonIcon: 'pi pi-download mr-2',
+  //   sort: false,
+  // },
 
   return columns;
 });
@@ -515,14 +506,14 @@ const isTableLoading = computed(() => {
 });
 
 watchEffect(async () => {
-  // Wait for both queries to be ready
+  // Wait for all queries to be ready
   if (isLoading.value || isLoadingAdministrations.value) {
     tableData.value = [];
     return;
   }
 
   // Only process if we have both org data and administrations data
-  if (!filteredOrgData.value || !allAdministrations.value) {
+  if (!orgData.value || !allAdministrations.value) {
     return;
   }
 
@@ -530,9 +521,10 @@ watchEffect(async () => {
 
   try {
     const mappedData = await Promise.all(
-      filteredOrgData.value.map(async (org) => {
+      orgData.value.map(async (org) => {
         const userCount = await countUsersByOrg(activeOrgType.value, org.id);
         const assignmentCount = getAdministrationsByOrg(org.id, activeOrgType.value, allAdministrations.value).length;
+
         return {
           ...org,
           userCount,
@@ -651,38 +643,36 @@ onUnmounted(() => {
   isDialogVisible.value = false;
 });
 
-watchEffect(() => {
-  selectedDistrict.value = _get(_head(allDistricts.value), 'id');
-});
-
-watch(allSchools, (newValue) => {
-  selectedSchool.value = _get(_head(newValue), 'id');
-});
-
 const tableKey = ref(0);
-watch([selectedDistrict, selectedSchool], () => {
+watch([selectedSite, selectedSchool], () => {
   tableKey.value += 1;
 });
 
 const filteredTableData = computed(() => {
-  if (!tableData.value || !sanitizedSearchString.value) {
-    return tableData.value;
+  if (searchQuery.value?.trim()?.length > 0) {
+    const normalizedSearchQuery = normalizeToLowercase(searchQuery.value);
+
+    return tableData.value?.filter((item) => {
+      const normalizedItemName = normalizeToLowercase(item?.name || '');
+
+      // Filter by name
+      if (normalizedItemName && normalizedItemName.includes(normalizedSearchQuery)) {
+        return true;
+      }
+
+      // Filter by tags if they exist
+      if (item.tags && Array.isArray(item.tags)) {
+        return item.tags.some((tag) => {
+          const normalizedTag = normalizeToLowercase(tag || '');
+          return normalizedTag.includes(normalizedSearchQuery);
+        });
+      }
+
+      return false;
+    });
   }
 
-  const query = sanitizedSearchString.value.toLowerCase().trim();
-  return tableData.value.filter((item) => {
-    // Filter by name
-    if (item.name && item.name.toLowerCase().includes(query)) {
-      return true;
-    }
-
-    // Filter by tags if they exist
-    if (item.tags && Array.isArray(item.tags)) {
-      return item.tags.some((tag) => tag.toLowerCase().includes(query));
-    }
-
-    return false;
-  });
+  return tableData.value || [];
 });
 </script>
 

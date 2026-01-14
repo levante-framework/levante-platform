@@ -119,7 +119,7 @@
                     />
                   </div>
 
-                  <div v-if="selectedStatus === ASSIGNMENT_STATUSES.CURRENT">
+                  <div v-if="getAssignmentStatus(selectedAssignment) === ASSIGNMENT_STATUSES.CURRENT">
                     <button
                       v-if="isTaskComplete(game?.completedOn, game?.taskId)"
                       class="game-btn --completed"
@@ -142,14 +142,14 @@
                     </router-link>
                   </div>
 
-                  <div v-if="selectedStatus === ASSIGNMENT_STATUSES.UPCOMING">
+                  <div v-if="getAssignmentStatus(selectedAssignment) === ASSIGNMENT_STATUSES.UPCOMING">
                     <div class="game-btn --disabled">
                       <i class="pi pi-hourglass"></i>
-                      <span>Not yet available</span>
+                      <span>{{ $t('gameTabs.taskNotYetAvailable') }}</span>
                     </div>
                   </div>
 
-                  <div v-if="selectedStatus === ASSIGNMENT_STATUSES.PAST">
+                  <div v-if="getAssignmentStatus(selectedAssignment) === ASSIGNMENT_STATUSES.PAST">
                     <div v-if="isTaskComplete(game?.completedOn, game?.taskId)" class="game-btn --disabled --completed">
                       <i class="pi pi-check-circle"></i>
                       <span>{{ $t('gameTabs.taskCompleted') }}</span>
@@ -157,7 +157,7 @@
 
                     <div v-else class="game-btn --disabled --incomplete">
                       <i class="pi pi-ban"></i>
-                      <span>No longer available</span>
+                      <span>{{ $t('gameTabs.taskNoLongerAvailable') }}</span>
                     </div>
                   </div>
                 </div>
@@ -205,6 +205,8 @@ import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
 import PvProgressBar from 'primevue/progressbar';
 import { useAssignmentsStore } from '@/store/assignments';
 import { ASSIGNMENT_STATUSES } from '@/constants';
+import { getAssignmentStatus } from '@/helpers/assignments';
+import { LEVANTE_TASK_IDS, ROAR_TASK_IDS } from '@/constants/coreTasks';
 
 interface TaskData {
   name: string;
@@ -259,9 +261,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const authStore = useAuthStore();
-const assignmentsStore = useAssignmentsStore();
 const surveyStore = useSurveyStore();
-const { selectedStatus } = storeToRefs(assignmentsStore);
+const assignmentsStore = useAssignmentsStore();
+const { selectedAssignment } = storeToRefs(assignmentsStore);
 const queryClient = useQueryClient();
 const surveyData = queryClient.getQueryData(['surveyResponses', props.userData.id]);
 
@@ -330,21 +332,13 @@ const getSpecificSurveyProgressClass = computed(() => (loopIndex: number): strin
 
 const { t, locale } = useI18n();
 
-const levanteTasks: string[] = [
-  'intro',
-  'heartsAndFlowers',
-  'egmaMath',
-  'matrixReasoning',
-  'memoryGame',
-  'mentalRotation',
-  'sameDifferentSelection',
-  'theoryOfMind',
-  'trog',
-  'survey',
-  'mefs',
-  'roarInference',
-  'vocab',
-];
+const normalizeTaskId = (taskId: string): string => camelize(taskId.toLowerCase());
+
+const normalizedLevanteTaskIds = new Set(LEVANTE_TASK_IDS.map((taskId) => normalizeTaskId(taskId)));
+const normalizedRoarTaskIds = new Set(ROAR_TASK_IDS.map((taskId) => normalizeTaskId(taskId)));
+
+const isLevanteTask = (taskId: string): boolean => normalizedLevanteTaskIds.has(normalizeTaskId(taskId));
+const isRoarTask = (taskId: string): boolean => normalizedRoarTaskIds.has(normalizeTaskId(taskId));
 
 const getTaskName = (taskId: string, taskName: string): string => {
   // Translate Levante task names. The task name is not the same as the taskId.
@@ -359,9 +353,14 @@ const getTaskName = (taskId: string, taskName: string): string => {
     }
   }
 
-  if (levanteTasks.includes(camelize(taskIdLowercased))) {
+  if (isLevanteTask(taskIdLowercased)) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
   }
+
+  if (isRoarTask(taskIdLowercased)) {
+    return t(`gameTabs.${camelize(taskIdLowercased)}`);
+  }
+
   return taskName;
 };
 
@@ -378,9 +377,10 @@ const getTaskDescription = (taskId: string, taskDescription: string): string => 
     }
   }
 
-  if (levanteTasks.includes(camelize(taskIdLowercased))) {
+  if (isLevanteTask(taskIdLowercased) || isRoarTask(taskIdLowercased)) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
   }
+
   return taskDescription;
 };
 
@@ -392,16 +392,13 @@ const getRoutePath = (taskId: string, variantURL?: string, taskURL?: string): st
 
   if (lowerCasedAndCamelizedTaskId === 'survey') {
     return '/survey';
-  } else if (levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
+  } else if (LEVANTE_TASK_IDS.some((taskId) => taskId === lowerCasedAndCamelizedTaskId)) {
     return '/game/core-tasks/' + taskId;
   } else {
     return '/game/' + taskId;
   }
 };
 
-const taskCompletedMessage = computed((): string => {
-  return t('gameTabs.taskCompleted');
-});
 
 const currentGameId = computed((): string | undefined => {
   return _get(
@@ -421,8 +418,6 @@ const gameIndex = computed((): number =>
 const displayGameIndex = computed((): number => (gameIndex.value === -1 ? 0 : gameIndex.value));
 
 const allGamesComplete = computed((): boolean => gameIndex.value === -1);
-
-const { selectedAssignment } = storeToRefs(assignmentsStore);
 
 async function routeExternalTask(game: Game): Promise<void> {
   let url: string;

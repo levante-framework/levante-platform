@@ -18,7 +18,7 @@
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="tooltip('View parameters')"
+              v-tooltip.top="getTooltip('View parameters')"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
@@ -40,7 +40,7 @@
               class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
               @click="visible = true"
               ><i
-                v-tooltip.top="tooltip('Click to expand')"
+                v-tooltip.top="getTooltip('Click to expand')"
                 class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100"
               ></i
             ></PvButton>
@@ -111,7 +111,7 @@
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
             @click="toggle($event)"
             ><i
-              v-tooltip.top="tooltip('View parameters')"
+              v-tooltip.top="getTooltip('View parameters')"
               class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
             ></i
           ></PvButton>
@@ -136,7 +136,7 @@
             class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
             @click="visible = true"
             ><i
-              v-tooltip.top="tooltip('Click to expand')"
+              v-tooltip.top="getTooltip('Click to expand')"
               class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100"
             ></i
           ></PvButton>
@@ -278,7 +278,7 @@ import PvPopover from 'primevue/popover';
 import PvTag from 'primevue/tag';
 import EditVariantDialog from '@/components/EditVariantDialog.vue';
 import { getLanguageInfo } from '@/helpers/languageDiscovery';
-import { tooltip } from '@/helpers';
+import { getTooltip } from '@/helpers';
 
 interface Condition {
   field: string;
@@ -350,27 +350,33 @@ const formattedAssignedConditions = computed((): string => {
     .filter((entry) => entry.field !== 'age')
     .map((entry) => {
       const valueStr = String(entry.value ?? '');
-      if (!valueStr) return ''; // Handle cases where value might be null, undefined, or already an empty string
+      // Handle cases where value might be null, undefined, or already an empty string
+      if (!valueStr) return '';
 
-      // Replace "student" with "child" for display purposes
       let displayValue = valueStr;
+      // Replace "student" with "child" for display purposes
       if (entry.field === 'userType' && valueStr.toLowerCase() === 'student') {
         displayValue = 'child';
       }
 
-      const capitalizedValue = displayValue.charAt(0).toUpperCase() + displayValue.slice(1);
+      // Replace "parent" with "caregiver"
+      if (entry.field === 'userType' && valueStr.toLowerCase() === 'parent') {
+        displayValue = 'caregiver';
+      }
+
       // Special case for 'child' to pluralize correctly as 'Children' instead of 'Childs'
       if (entry.field === 'userType' && displayValue.toLowerCase() === 'child') {
         return entry.op === 'EQUAL' ? 'Children' : 'Not Children';
       }
+
+      const capitalizedValue = displayValue.charAt(0).toUpperCase() + displayValue.slice(1);
+
       return entry.op === 'EQUAL' ? `${capitalizedValue}s` : `Not ${capitalizedValue}s`;
     })
-    .filter((str) => str !== ''); // Remove empty strings that might result from 'age' filter or empty values
+    // Remove empty strings that might result from 'age' filter or empty values
+    .filter((str) => str !== '');
 
-  if (processedStrings.length === 0) {
-    return '';
-  }
-  return processedStrings.join(', ');
+  return processedStrings.length > 0 ? processedStrings.join(', ') : '';
 });
 
 const handleRemove = (): void => {

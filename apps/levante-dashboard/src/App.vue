@@ -14,16 +14,14 @@
     <!-- Dynamic Favicon -->
     <link rel="icon" :href="`/favicon-levante.ico`" />
   </Head>
-  <div v-if="isAuthStoreReady" :class="`${authStore.showSideBar ? 'app app--sidebar' : 'app'}`">
+  <div v-if="isAuthStoreReady" class="app">
     <PvToast position="bottom-center" />
 
     <NavBar v-if="typeof $route.name === 'string' && !NAVBAR_BLACKLIST.includes($route.name)" />
 
-    <SideBar v-if="authStore.showSideBar" />
-
     <router-view :key="$route.fullPath" />
 
-    <SessionTimer v-if="loadSessionTimeoutHandler" />
+    <!-- <SessionTimer v-if="loadSessionTimeoutHandler" /> -->
   </div>
   <div v-else>
     <LevanteSpinner fullscreen />
@@ -43,9 +41,9 @@ import { i18n } from '@/translations/i18n';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import NavBar from '@/components/NavBar.vue';
 import { NAVBAR_BLACKLIST } from './constants';
-import SideBar from '@/components/SideBar.vue';
+import { usePageEventTracking } from '@/composables/usePageEventTracking';
 
-const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
+// const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 const VueQueryDevtools = defineAsyncComponent(() =>
   import('@tanstack/vue-query-devtools').then((module) => module.VueQueryDevtools),
 );
@@ -55,6 +53,9 @@ const showDevtools = ref(false);
 
 const authStore = useAuthStore();
 const route = useRoute();
+
+// Initialize page event tracking for global analytics
+usePageEventTracking();
 
 const pageTitle = computed(() => {
   const locale = i18n.global.locale.value;
@@ -73,8 +74,6 @@ const pageTitle = computed(() => {
   return 'Levante';
 });
 
-const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated());
-
 onBeforeMount(async () => {
   await authStore.initFirekit();
 
@@ -85,9 +84,6 @@ onBeforeMount(async () => {
     if (authStore.getUserId()) {
       const userClaims = await fetchDocById('userClaims', authStore.getUserId());
       authStore.setUserClaims(userClaims);
-
-      const showSideBar = !userClaims?.claims?.super_admin && !userClaims?.claims?.admin;
-      authStore.setShowSideBar(showSideBar);
     }
 
     if (authStore.getUserId()) {

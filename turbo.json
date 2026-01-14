@@ -2,7 +2,11 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "outputs": ["functions/levante-admin/lib/**", "functions/levante-assessment/lib/**"]
+      "outputs": [
+        "dist/**",
+        "functions/levante-admin/lib/**",
+        "functions/levante-assessment/lib/**"
+      ]
     },
     "build:dev": {
       "outputs": ["dist/**"]

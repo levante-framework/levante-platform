@@ -5,7 +5,7 @@
   <div v-else class="options-container">
     <div class="flex justify-content-end mr-3 mt-2 button-container">
       <button
-        v-if="props.showOptionsControl"
+        v-if="props.showOptionsControl && shouldRenderToolbar"
         data-testid="options-control"
         type="button"
         class="text-red-700 cursor-pointer options-toggle"
@@ -14,7 +14,10 @@
         {{ showControls ? 'Hide Options' : 'Show Options' }}
       </button>
     </div>
-    <div v-if="showControls" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-4">
+    <div
+      v-if="showControls && shouldRenderToolbar"
+      class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mb-4"
+    >
       <div
         v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport"
         class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3"
@@ -23,7 +26,7 @@
         <PvFloatLabel v-if="props.allowColumnSelection">
           <PvMultiSelect
             id="ms-columns"
-            v-tooltip.top="tooltip('Show and hide columns')"
+            v-tooltip.top="getTooltip('Show and hide columns')"
             :model-value="selectedColumns"
             :options="inputColumns"
             option-label="header"
@@ -48,9 +51,8 @@
           />
           <label for="ms-columns" class="view-label2">Freeze Columns</label>
         </PvFloatLabel>
-        <!-- <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
+        <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
           <PvButton
-            v-if="allowExport"
             v-tooltip.bottom="
               `Export scores for ${selectedRows.length} student${
                 selectedRows.length > 1 ? 's' : ''
@@ -59,17 +61,16 @@
             label="Export Selected"
             :badge="selectedRows?.length?.toString()"
             :disabled="selectedRows.length === 0"
-            class="m-1 m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-            @click="exportCSV(true, $event)"
+            class="m-1 h-3rem bg-primary text-white border-none border-round text-sm hover:bg-red-900"
+            @click="exportCSV(true)"
           />
           <PvButton
-            v-if="allowExport"
             v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
             label="Export Whole Table"
-            class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-            @click="exportCSV(false, $event)"
+            class="m-1 h-3rem bg-primary text-white border-none border-round text-sm hover:bg-red-900"
+            @click="exportCSV(false)"
           />
-        </span> -->
+        </span>
       </div>
     </div>
     <div class="flex flex-column">
@@ -104,6 +105,7 @@
           :loading="loading"
           scrollable
           :select-all="selectAll"
+          :row-class="rowClass"
           data-cy="roar-data-table"
           @select-all-change="onSelectAll"
           @row-select="onSelectionChange"
@@ -132,7 +134,7 @@
           >
             <template #header>
               <div
-                v-tooltip.top="tooltip(`${toolTipByHeader(col.header)}`)"
+                v-tooltip.top="getTooltip(`${toolTipByHeader(col.header)}`)"
                 :style="[
                   toolTipByHeader(col.header).length > 0
                     ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
@@ -171,7 +173,7 @@
               <div v-else-if="col.link">
                 <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
-                    v-tooltip.right="tooltip(colData.tooltip)"
+                    v-tooltip.right="getTooltip(colData.tooltip)"
                     severity="secondary"
                     text
                     class="border border-round surface-200 p-2 hover:surface-500"
@@ -217,10 +219,33 @@
               <div v-else-if="col.field === 'user.lastName'">
                 {{ _get(colData, col.field) }}
               </div>
-              <div v-else-if="col.field === 'userType' && _get(colData, col.field) === 'parent'">caregiver</div>
-              <div v-else-if="col.field === 'userType' && _get(colData, col.field) === 'student'">child</div>
               <div v-else-if="col.field === 'id' && _get(colData, 'userType') === 'admin'">--</div>
               <div v-else-if="col.field === 'username' && _get(colData, 'userType') === 'admin'">--</div>
+
+              <div v-else-if="col.field === 'roles'">
+                <PvTag
+                  v-if="getRole(_get(colData, col.field))"
+                  class="role-tag"
+                  rounded
+                  :severity="getRoleTagSeverity(_get(colData, col.field))"
+                  :value="getRoleTagLabel(_get(colData, col.field))"
+                />
+                <span v-else>--</span>
+              </div>
+
+              <div v-else-if="col.field === 'actions'" class="actions">
+                <PvButton
+                  v-for="action in _get(colData, col.field)"
+                  :key="action['name']"
+                  v-tooltip.top="getTooltip(action['tooltip'])"
+                  :class="`action action--${action['name']}`"
+                  :icon="action['icon']"
+                  variant="link"
+                  @click="action['callback']"
+                >
+                </PvButton>
+              </div>
+
               <div v-else>
                 {{ _get(colData, col.field) }}
               </div>
@@ -364,7 +389,7 @@
           <template #empty>
             <div class="flex flex-column align-items-center align-text-left my-8">
               <div class="text-lg font-bold my-2">No results found</div>
-              <div class="font-light">The filters applied have no matching results .</div>
+              <div class="font-light">The filters applied have no matching results.</div>
               <PvButton
                 text
                 class="my-2 bg-primary p-2 border-none border-round text-white hover:bg-red-900"
@@ -381,7 +406,6 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvDatePicker from 'primevue/datepicker';
 import PvChip from 'primevue/chip';
@@ -403,7 +427,31 @@ import _startCase from 'lodash/startCase';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
-import { tooltip } from '@/helpers';
+import { getTooltip } from '@/helpers';
+import { ROLES } from '@/constants/roles';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
+const props = defineProps({
+  columns: { type: Array, required: true },
+  data: { type: Array, required: true },
+  allowExport: { type: Boolean, default: true },
+  exportFilename: { type: String, default: 'datatable-export' },
+  pageLimit: { type: Number, default: 15 },
+  totalRecords: { type: Number, required: false, default: 0 },
+  loading: { type: Boolean, default: false },
+  lazy: { type: Boolean, default: false },
+  lazyPreSorting: { type: Array, required: false, default: () => [] },
+  isInsideListOrgs: {
+    type: Boolean,
+    default: false,
+  },
+  groupheaders: { type: Boolean, default: false },
+  allowFiltering: { type: Boolean, default: true },
+  allowColumnSelection: { type: Boolean, default: true },
+  showOptionsControl: { type: Boolean, default: true },
+  rowClass: { type: Function, default: null },
+});
 
 /*
 Using the DataTable
@@ -428,38 +476,24 @@ Array of objects consisting of a field and header at minimum.
       scrolled left-to-right. It is suggested that this only be used on
       the leftmost column.
 */
-const showControls = ref(false);
+const shouldRenderToolbar = computed(
+  () => props.allowFiltering || props.allowColumnSelection || props.allowExport,
+);
+
+const showControls = ref(!props.showOptionsControl && shouldRenderToolbar.value);
 const toggleControls = () => {
+  if (!props.showOptionsControl || !shouldRenderToolbar.value) return;
   showControls.value = !showControls.value;
 };
-
-const props = defineProps({
-  columns: { type: Array, required: true },
-  data: { type: Array, required: true },
-  allowExport: { type: Boolean, default: true },
-  exportFilename: { type: String, default: 'datatable-export' },
-  pageLimit: { type: Number, default: 15 },
-  totalRecords: { type: Number, required: false, default: 0 },
-  loading: { type: Boolean, default: false },
-  lazy: { type: Boolean, default: false },
-  lazyPreSorting: { type: Array, required: false, default: () => [] },
-  isInsideListOrgs: {
-    type: Boolean,
-    default: false,
-  },
-  groupheaders: { type: Boolean, default: false },
-  allowFiltering: { type: Boolean, default: true },
-  allowColumnSelection: { type: Boolean, default: true },
-  showOptionsControl: { type: Boolean, default: true },
-});
-
+const authStore = useAuthStore();
+const { currentSite } = storeToRefs(authStore);
 const inputColumns = ref(props.columns);
 const selectedColumns = ref(props.columns);
 // Filter the live data (props.columns) with the selections of selectedColumns
 const computedColumns = computed(() => {
   return _map(selectedColumns.value, (col) => {
     return _find(props.columns, (pcol) => pcol.header === col.header);
-  });
+  }).filter(Boolean);
 });
 const currentSort = ref([]);
 const selectedRows = ref([]);
@@ -482,21 +516,11 @@ const taskFilterOptions = ref([
   },
 ]);
 
-const toast = useToast();
 const selectAll = ref(false);
 const onSelectAll = () => {
   selectAll.value = !selectAll.value;
   if (selectAll.value) {
     selectedRows.value = props.data;
-    toast.add({
-      severity: 'info',
-      summary: 'Rows selected',
-      detail: `You selected ${selectedRows.value.length} rows but there are
-        ${props.totalRecords} total rows in all of this table's pages. If you
-        would like to export all rows, please click the "Export Whole Table"
-        button.`,
-      life: 5000,
-    });
   } else {
     selectedRows.value = [];
   }
@@ -626,6 +650,40 @@ function getFormattedDate(date) {
     }
   }
   return '';
+}
+
+function getRole(roles) {
+  return roles?.filter((value) => [currentSite.value, 'any'].includes(value?.siteId))?.map((value) => value?.role)[0];
+}
+
+function getRoleTagSeverity(roles) {
+  switch (getRole(roles)) {
+    case ROLES.SUPER_ADMIN:
+        return 'danger';
+    case ROLES.SITE_ADMIN:
+        return 'info';
+    case ROLES.ADMIN:
+        return 'success';
+    case ROLES.RESEARCH_ASSISTANT:
+        return 'warn';
+    default:
+      return null;
+  }
+}
+
+function getRoleTagLabel(roles) {
+  switch (getRole(roles)) {
+    case ROLES.SUPER_ADMIN:
+        return 'Super Admin';
+    case ROLES.SITE_ADMIN:
+        return 'Site Admin';
+    case ROLES.ADMIN:
+        return 'Admin';
+    case ROLES.RESEARCH_ASSISTANT:
+      return 'Research Assistant';
+    default:
+      return null;
+  }
 }
 
 const onColumnToggle = (selected) => {
@@ -823,5 +881,41 @@ button.p-column-filter-menu-button.p-link:hover {
 /* Add spacing between icon and text in tags */
 .progress-tag .p-tag-icon {
   margin-right: 0.5rem !important;
+}
+
+.user-type-value {
+  text-transform: capitalize;
+}
+
+.role-tag {
+  display: inline-flex;
+  justify-content: flex-start;
+  align-items: center;
+  font-size: 12px !important;
+  text-transform: capitalize;
+
+  .pi {
+    margin: 0 0.25rem 0 0;
+    font-weight: inherit;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+
+  .action--edit {
+    color: inherit;
+  }
+}
+
+.p-datatable .p-datatable-tbody > tr.current-user-row {
+  background-color: #fef2f2 !important;
+}
+
+.p-datatable .p-datatable-tbody > tr.current-user-row > td:first-child {
+  border-left: 3px solid var(--primary-color) !important;
 }
 </style>

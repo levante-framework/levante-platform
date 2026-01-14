@@ -5,10 +5,13 @@ import _mapValues from 'lodash/mapValues';
 import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
+import { AUTH_USER_TYPE } from '@/constants/auth';
 import { convertValues, getAxiosInstance, getBaseDocumentPath, orderByDefault } from './utils';
-import { filterAdminOrgs } from '@/helpers';
-import { isEmulator } from '@/helpers';
-import { FIRESTORE_BASE_URL } from '@/constants/firebase';
+import { FIRESTORE_DATABASES } from '@/constants/firebase';
+import { ROLES } from '@/constants/roles';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
+import { logger } from '@/logger';
+import { fetchOrgsBySite } from './orgs';
 
 export function getTitle(item, isSuperAdmin) {
   if (isSuperAdmin) {
@@ -46,7 +49,9 @@ const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
   return batchStatsDocs;
 };
 
-const mapAdministrations = async ({ isSuperAdmin, data, creators, adminOrgs }) => {
+// TODO: Remove this function. Fields that we want should be passed into the query, not filtered from the whole data of the document on the client side.
+// Netowrk call should be done in the query function, not here.
+const mapAdministrations = async (data) => {
   // First format the administration documents
   const administrationData = data
     .map((a) => a.data)
@@ -59,10 +64,6 @@ const mapAdministrations = async ({ isSuperAdmin, data, creators, adminOrgs }) =
         families: a.families,
       };
 
-      if (!isSuperAdmin.value) {
-        assignedOrgs = filterAdminOrgs(adminOrgs.value, assignedOrgs);
-      }
-
       return {
         id: a.id,
         name: a.name,
@@ -72,11 +73,11 @@ const mapAdministrations = async ({ isSuperAdmin, data, creators, adminOrgs }) =
           end: a.dateClosed,
           created: a.dateCreated,
         },
-        creator: { ...creators[a.createdBy] } || null,
         assessments: a.assessments,
         assignedOrgs,
         // If testData is not defined, default to false when mapping
         testData: a.testData ?? false,
+        creatorName: a.creatorName,
       };
     });
 
@@ -101,9 +102,15 @@ const mapAdministrations = async ({ isSuperAdmin, data, creators, adminOrgs }) =
   return administrations;
 };
 
-export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false, orderBy) => {
+export const administrationPageFetcher = async (selectedDistrictId, fetchTestData = false, orderBy) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
+
+  const siteId =
+    selectedDistrictId.value.trim() && selectedDistrictId.value !== 'any' ? selectedDistrictId.value : null;
+
+  let orgs = [];
+
   const administrationIds = await roarfirekit.value.getAdministrations({
     testData: toValue(fetchTestData),
   });
@@ -136,27 +143,22 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     undefined,
   );
 
-  const creatorIds = administrationData.map((adm) => adm.data.createdBy).filter(Boolean);
-  const uniqueCreatorIds = [...new Set(creatorIds)];
-  const creatorDocs = uniqueCreatorIds.map((id) => `${getBaseDocumentPath()}/users/${id}`);
-  const { data: creators } = await axiosInstance.post(`${getBaseDocumentPath()}:batchGet`, { documents: creatorDocs });
-  const creatorsData = creators.reduce((acc, { found }) => {
-    if (found) {
-      const creatorId = _last(found.name.split('/'));
-      acc[creatorId] = {
-        id: creatorId,
-        ..._mapValues(found.fields, (value) => convertValues(value)),
-      };
-    }
-    return acc;
-  }, {});
+  let administrations = await mapAdministrations(administrationData);
 
-  const administrations = await mapAdministrations({
-    isSuperAdmin,
-    data: administrationData,
-    creators: creatorsData,
-    adminOrgs: exhaustiveAdminOrgs,
-  });
+  if (siteId) {
+    orgs = await fetchOrgsBySite(siteId);
+    orgs.push({ id: siteId });
+
+    administrations = administrations.filter((administration) => {
+      return orgs.some(
+        (org) =>
+          administration.assignedOrgs.districts.includes(org.id) ||
+          administration.assignedOrgs.schools.includes(org.id) ||
+          administration.assignedOrgs.classes.includes(org.id) ||
+          administration.assignedOrgs.groups.includes(org.id),
+      );
+    });
+  }
 
   const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
   const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
@@ -172,7 +174,7 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
 };
 
 /**
- * Fetches administrations that are assigned to a specific organization.
+ * Returns administrations that are assigned to a specific organization.
  *
  * @param {String} orgId – The organization ID to filter administrations by.
  * @param {String} orgType – The organization type (districts, schools, classes, groups).
@@ -188,4 +190,123 @@ export const getAdministrationsByOrg = (orgId, orgType, administrations) => {
     const assignedOrgs = administration.assignedOrgs?.[orgType] || [];
     return assignedOrgs.includes(orgId);
   });
+};
+
+export const fetchAdminsBySite = async (siteId, siteName, db = FIRESTORE_DATABASES.ADMIN) => {
+  const axiosInstance = getAxiosInstance(db);
+
+  let requestBody;
+
+  if (siteId.value === 'any') {
+    requestBody = {
+      structuredQuery: {
+        from: [{ collectionId: FIRESTORE_COLLECTIONS.USERS }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: 'userType' },
+            op: 'EQUAL',
+            value: { stringValue: AUTH_USER_TYPE.ADMIN },
+          },
+        },
+      },
+    };
+  } else {
+    const filters = [
+      {
+        fieldFilter: {
+          field: { fieldPath: 'roles' },
+          op: 'ARRAY_CONTAINS',
+          value: {
+            mapValue: {
+              fields: {
+                siteId: { stringValue: 'any' },
+                role: { stringValue: ROLES.SUPER_ADMIN },
+              },
+            },
+          },
+        },
+      },
+    ];
+
+    if (siteName) {
+      filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: 'roles' },
+            op: 'ARRAY_CONTAINS',
+            value: {
+              mapValue: {
+                fields: {
+                  siteId: { stringValue: siteId.value },
+                  siteName: { stringValue: siteName.value },
+                  role: { stringValue: ROLES.ADMIN },
+                },
+              },
+            },
+          },
+        },
+        {
+          fieldFilter: {
+            field: { fieldPath: 'roles' },
+            op: 'ARRAY_CONTAINS',
+            value: {
+              mapValue: {
+                fields: {
+                  siteId: { stringValue: siteId.value },
+                  siteName: { stringValue: siteName.value },
+                  role: { stringValue: ROLES.SITE_ADMIN },
+                },
+              },
+            },
+          },
+        },
+        {
+          fieldFilter: {
+            field: { fieldPath: 'roles' },
+            op: 'ARRAY_CONTAINS',
+            value: {
+              mapValue: {
+                fields: {
+                  siteId: { stringValue: siteId.value },
+                  siteName: { stringValue: siteName.value },
+                  role: { stringValue: ROLES.RESEARCH_ASSISTANT },
+                },
+              },
+            },
+          },
+        },
+      );
+    }
+
+    requestBody = {
+      structuredQuery: {
+        from: [{ collectionId: FIRESTORE_COLLECTIONS.USERS }],
+        where: {
+          compositeFilter: {
+            op: 'OR',
+            filters,
+          },
+        },
+      },
+    };
+  }
+
+  try {
+    const response = await axiosInstance.post(`${getBaseDocumentPath()}:runQuery`, requestBody);
+
+    return response.data
+      .filter((user) => user.document)
+      .map((user) => {
+        const doc = user.document;
+
+        return {
+          id: doc.name.split('/').pop(),
+          ..._mapValues(doc.fields, (value) => convertValues(value)),
+        };
+      });
+  } catch (error) {
+    console.error('fetchAdminsBySite: Error fetching admins by siteId:', error);
+    logger.error(error, { context: { function: 'fetchAdminsBySite', siteId, siteName } });
+    throw error;
+  }
 };

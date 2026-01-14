@@ -51,7 +51,10 @@ function localeToPathParts(localeRaw) {
   const locale = originalLocale.toLowerCase();
   if (locale.includes('-')) {
     const [lang, region] = locale.split('-');
-    return { dir: path.join('src', 'translations', lang, region), filename: `${originalLocale}-componentTranslations.json` };
+    return {
+      dir: path.join('src', 'translations', lang, region),
+      filename: `${originalLocale}-componentTranslations.json`,
+    };
   }
   return { dir: path.join('src', 'translations', locale), filename: `${originalLocale}-componentTranslations.json` };
 }
@@ -136,6 +139,12 @@ function main() {
         setNested(perLocaleMessages[localeKey], identifier, value);
       }
     }
+  }
+
+  // Ensure legacy 'es' is generated from 'es-CO' when 'es' is not present
+  if (!perLocaleMessages['es'] && perLocaleMessages['es-co']) {
+    perLocaleMessages['es'] = JSON.parse(JSON.stringify(perLocaleMessages['es-co']));
+    originalCaseMapping['es'] = 'es';
   }
 
   // Write one JSON file per locale

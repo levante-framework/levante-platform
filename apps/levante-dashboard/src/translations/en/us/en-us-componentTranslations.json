@@ -42,7 +42,14 @@
       "loadingAssignments": "Loading Assignments",
       "noAssignments": "You have no assignments!",
       "selectAssignment": "Select an assignment",
-      "showOptionalAssignments": "Show optional assignments"
+      "showOptionalAssignments": "Show optional assignments",
+      "assignments": "Assignments",
+      "current": "Current",
+      "past": "Past",
+      "upcoming": "Upcoming",
+      "noCurrentAssignmentsFound": "No current assignments were found",
+      "noPastAssignmentsFound": "No past assignments were found",
+      "noUpcomingAssignmentsFound": "No upcoming assignments were found"
     },
     "home-selector": {
       "inactivityLogout": "You will soon be logged out for security purposes. Please click \"Continue\" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.",
@@ -73,7 +80,6 @@
   },
   "components": {
     "game-tabs": {
-      "LEVANTE TRANSLATIONS--------------------------": "",
       "clickToStart": "Click to start",
       "egmaMathDescription": "Solve the math problems.",
       "egmaMathName": "Math",
@@ -114,9 +120,17 @@
       "theoryOfMindDescription": "Listen to the stories and answer the questions.",
       "theoryOfMindName": "Stories",
       "trogDescription": "Listen to the words and choose the matching picture.",
-      "trogName": "Sentence Undersanding",
+      "trogName": "Sentence Understanding",
       "vocabDescription": "Listen to the word and choose the matching picture.",
-      "vocabName": "Vocabulary"
+      "vocabName": "Vocabulary",
+      "pa": "Language Sounds",
+      "sre": "Sentence Reading",
+      "swr": "Word Reading",
+      "taskNoLongerAvailable": "No longer Available",
+      "taskNotYetAvailable": "Not available yet",
+      "paDescription": "Identify the sound in the words.",
+      "sreDescription": "Read the sentences as quickly as you can and decide if they are true or false.",
+      "swrDescription": "The words will appear quickly on the screen. Decide if they are real or made-up."
     },
     "navbar": {
       "greeting": "Hi",
@@ -125,7 +139,18 @@
     "participant-sidebar": {
       "grade": "Grade",
       "studentInfo": "Participant Info",
-      "tasksCompleted": "tasks completed!"
+      "tasksCompleted": "Tasks completed!",
+      "statusCurrent": "Current",
+      "statusOpened": "Opened",
+      "statusClose": "Close",
+      "statusClosed": "Closed",
+      "statusOpen": "Open",
+      "statusUpcoming": "Upcoming",
+      "statusPast": "Past",
+      "assignments": "Assignments",
+      "noCurrentAssignments": "You have no current assignments.",
+      "noUpcomingAssignments": "You have no upcoming assignments.",
+      "noPastAssignments": "You have no past assignments."
     },
     "sentry-form": {
       "buttonLabel": "Report an Issue",

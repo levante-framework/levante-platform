@@ -38,7 +38,7 @@ export const languageOptions: Record<string, { translations: any; language: stri
     language: 'English (United States)',
     code: 'usa',
   },
-  es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
+  // es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
   'es-CO': {
     translations: esCOTranslations,
     language: 'Español (Colombia)',
@@ -97,13 +97,13 @@ const namespaceMap: Record<string, string> = {
 // Helper function to add flat keys alongside nested ones
 function addFlatKeys(messages: Record<string, any>): Record<string, any> {
   const result = { ...messages };
-  
+
   // Add flat keys based on namespace mapping
   Object.entries(namespaceMap).forEach(([flatKey, nestedPath]) => {
     const pathParts = nestedPath.split('.');
     let current: any = messages;
     let found = true;
-    
+
     // Navigate to the nested object
     for (const part of pathParts) {
       if (current && typeof current === 'object' && current[part]) {
@@ -113,13 +113,13 @@ function addFlatKeys(messages: Record<string, any>): Record<string, any> {
         break;
       }
     }
-    
+
     // If we found the nested object, add it as a flat key
     if (found && current && typeof current === 'object') {
       result[flatKey] = current;
     }
   });
-  
+
   return result;
 }
 
@@ -129,7 +129,7 @@ const baseMessages: Record<string, any> = {
   'es-CO': addFlatKeys({ ...esCOTranslations, ...esCOIndividualScoreReport }),
   de: addFlatKeys(deTranslations),
   // Legacy fallbacks for backward compatibility
-  es: addFlatKeys({ ...esTranslations, ...esIndividualScoreReport }),
+  // es: addFlatKeys({ ...esTranslations, ...esIndividualScoreReport }),
 };
 
 // Dynamically load any generated componentTranslations for new locales and merge

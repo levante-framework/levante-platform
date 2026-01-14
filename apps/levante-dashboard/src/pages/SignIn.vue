@@ -127,6 +127,7 @@ import SignIn from '@/components/auth/SignIn.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 import { getUserAssignments } from '@/helpers/query/assignments';
 import { useAssignmentsStore } from '@/store/assignments';
+import { sortAssignmentsByDateOpened } from '@/helpers/assignments';
 
 const incorrect = ref(false);
 const authStore = useAuthStore();
@@ -162,15 +163,15 @@ const authWithGoogle = () => {
       .then(async () => {
         if (authStore.getUserId()) {
           const userClaims = await fetchDocById('userClaims', authStore.getUserId());
-          authStore.userClaims = userClaims;
+          authStore.setUserClaims(userClaims);
 
           const userData = await fetchDocById('users', authStore.getUserId());
-          authStore.userData = userData;
+          authStore.setUserData(userData);
 
-          if (!authStore.isUserAdmin()) {
+          if (!authStore.isUserAdmin() && !authStore.isUserSuperAdmin()) {
             const userAssignments = await getUserAssignments(authStore.getUserId());
-            assignmentsStore.setUserAssignments(userAssignments || []);
-            authStore.setShowSideBar(true);
+            const sortedAssignments = sortAssignmentsByDateOpened(userAssignments);
+            assignmentsStore.setUserAssignments(sortedAssignments);
           }
         }
       })
@@ -195,7 +196,7 @@ const modalPassword = ref('');
 const authWithEmail = async (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
-
+  spinner.value = true;
   incorrect.value = false;
   let creds = toRaw(state);
   if (creds.useLink && !creds.usePassword) {
@@ -212,19 +213,17 @@ const authWithEmail = async (state) => {
       .then(async () => {
         if (authStore.getUserId()) {
           const userClaims = await fetchDocById('userClaims', authStore.getUserId());
-          authStore.userClaims = userClaims;
+          authStore.setUserClaims(userClaims);
 
           const userData = await fetchDocById('users', authStore.getUserId());
-          authStore.userData = userData;
+          authStore.setUserData(userData);
 
-          if (!authStore.isUserAdmin()) {
+          if (!authStore.isUserAdmin() && !authStore.isUserSuperAdmin()) {
             const userAssignments = await getUserAssignments(authStore.getUserId());
-            assignmentsStore.setUserAssignments(userAssignments || []);
-            authStore.setShowSideBar(true);
+            const sortedAssignments = sortAssignmentsByDateOpened(userAssignments);
+            assignmentsStore.setUserAssignments(sortedAssignments);
           }
         }
-
-        spinner.value = true;
       })
       .catch((e) => {
         incorrect.value = true;
@@ -233,6 +232,9 @@ const authWithEmail = async (state) => {
         } else {
           throw e;
         }
+      })
+      .finally(() => {
+        spinner.value = false;
       });
   }
 };

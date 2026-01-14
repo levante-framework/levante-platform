@@ -8,32 +8,29 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
+import { useAssignmentsStore } from '@/store/assignments';
 import useUserChildDataQuery from '@/composables/queries/useUserChildDataQuery';
 import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAssessmentMutation';
-// import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../package-lock.json';
 import { logger } from '@/logger';
 
 const props = defineProps({
-  taskId: {
-    type: String,
-    required: false,
-    default: 'sre',
-  },
+  taskId: { type: String, default: 'egma-math' },
 });
 
 let levanteTaskLauncher;
 
 const taskId = props.taskId;
-// const { version } = packageLockJson.packages['node_modules/@levante-framework/core-tasks'];
+const { version } = packageLockJson.packages['node_modules/@levante-framework/core-tasks'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
-const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
-
-const version = import.meta.env.VITE_ROAR_SRE_VERSION;
+const { roarfirekit } = storeToRefs(authStore);
+const { getUserId } = authStore;
+const { isFirekitInit } = authStore;
+const assignmentsStore = useAssignmentsStore();
+const { selectedAssignment } = storeToRefs(assignmentsStore);
 
 const { mutateAsync: completeAssessmentMutate } = useCompleteAssessmentMutation();
 
@@ -81,12 +78,15 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit, isLoadingUserData],
-  async ([newFirekitInitValue, newLoadingUserData]) => {
-    if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
+  [isFirekitInit, isLoadingUserData, userData],
+  async ([newFirekitInitValue, newLoadingUserData, newUserData]) => {
+    const birthMonth = _get(userData.value, 'birthMonth');
+    const birthYear = _get(userData.value, 'birthYear');
+    const hasAgeData = birthMonth !== undefined && birthYear !== undefined;
+
+    if (newFirekitInitValue && !newLoadingUserData && hasAgeData && !taskStarted.value) {
       taskStarted.value = true;
-      const { selectedAdmin } = storeToRefs(gameStore);
-      await startTask(selectedAdmin);
+      await startTask(selectedAssignment);
     }
   },
   { immediate: true },
@@ -125,7 +125,7 @@ async function startTask(selectedAdmin) {
       });
 
       // Navigate to home, but first set the refresh flag to true.
-      gameStore.setHomeRefresh();
+      assignmentsStore.setHomeRefresh();
       router.push({ name: 'Home' });
     });
   } catch (error) {
@@ -133,6 +133,7 @@ async function startTask(selectedAdmin) {
     alert(
       'An error occurred while starting the task. Please refresh the page and try again. If the error persists, please submit an issue report.',
     );
+    logger.error('Error starting task', { error,  administrationId: selectedAdmin.value.id, taskId, userId: getUserId() });
   }
 }
 </script>

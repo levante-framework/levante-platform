@@ -6,29 +6,14 @@ import mkcert from 'vite-plugin-mkcert';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import UnheadVite from '@unhead/addons/vite';
 import * as child from 'child_process';
-import { readFileSync } from 'fs';
 
-let commitHash = 'unknown';
-try {
-  commitHash = child.execSync('git rev-parse --short HEAD').toString().trim();
-} catch (e) {
-  console.warn('Git hash not available');
-}
+const commitHash = child.execSync('git rev-parse --short HEAD').toString();
 
-let roarSreVersion = 'unknown';
-try {
-  const pkgPath = require.resolve('@bdelab/roar-sre/package.json');
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-  roarSreVersion = pkg.version;
-} catch (e) {
-  console.warn('Could not read version from @bdelab/roar-sre');
-}
-
+// https://vitejs.dev/config/
 export default defineConfig({
   define: {
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(commitHash),
     'import.meta.env.VITE_LEVANTE': JSON.stringify('TRUE'),
-    'import.meta.env.VITE_ROAR_SRE_VERSION': JSON.stringify(roarSreVersion),
   },
   plugins: [
     Vue({
@@ -40,11 +25,11 @@ export default defineConfig({
       },
     }),
     UnheadVite(),
-    ...(process.env.NODE_ENV === 'development' && process.env.CI !== 'true' ? [mkcert()] : []),
+    ...(process.env.VITE_HTTPS === 'TRUE' ? [mkcert()] : []),
     ...(process.env.NODE_ENV !== 'development'
       ? [
           sentryVitePlugin({
-            org: 'levante-framework',
+            org: 'roar-89588e380',
             project: 'dashboard',
           }),
         ]
@@ -61,6 +46,7 @@ export default defineConfig({
     fs: {
       allow: ['..'],
     },
+    https: process.env.VITE_HTTPS === 'TRUE',
   },
 
   build: {
@@ -81,11 +67,8 @@ export default defineConfig({
       },
     },
   },
-
   optimizeDeps: {
-    holdUntilCrawlEnd: false,
-    include: ['@levante-framework/firekit', 'primevue'],
-    exclude: process.env.CI === 'true' ? ['@tanstack/vue-query-devtools'] : [],
+    include: ['@levante-framework/firekit'],
     esbuildOptions: {
       mainFields: ['module', 'main'],
       resolveExtensions: ['.js', '.mjs', '.cjs'],

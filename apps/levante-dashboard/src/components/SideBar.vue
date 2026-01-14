@@ -9,16 +9,13 @@
     <transition name="sidebar__panel">
       <div v-if="showSideBarPanel" class="sidebar__panel">
         <div class="sidebar__panel__header">
-          <h3 class="sidebar__panel__title">Assignments</h3>
+          <h3 class="sidebar__panel__title">{{ t('participantSidebar.assignments') }}</h3>
         </div>
 
         <div class="sidebar__panel__main">
-          <div
-            v-if="selectedStatusCurrent"
-            :class="`assignment-group assignment-group--current ${selectedStatusCurrent ? '--active' : ''}`"
-          >
+          <div v-if="selectedStatusCurrent" class="assignment-group assignment-group--current --active">
             <small class="assignment-group__title"
-              >Current <span class="ml-auto font-medium">{{ numOfCurrentAssignments }}</span></small
+              >{{ t('participantSidebar.statusCurrent') }} <span class="ml-auto font-medium">{{ numOfCurrentAssignments }}</span></small
             >
             <ul v-if="currentAssignments.length > 0" class="assignment-group__list">
               <AssignmentCard
@@ -30,15 +27,12 @@
                 @click="onClickAssignment"
               />
             </ul>
-            <div v-else class="assignment-group__empty">No current assignments were found</div>
+            <div v-else class="assignment-group__empty">{{ $t('participantSidebar.noCurrentAssignments') }}</div>
           </div>
 
-          <div
-            v-if="selectedStatusUpcoming"
-            :class="`assignment-group assignment-group--upcoming ${selectedStatusUpcoming ? '--active' : ''}`"
-          >
+          <div v-if="selectedStatusUpcoming" class="assignment-group assignment-group--upcoming --active">
             <small class="assignment-group__title"
-              >Upcoming <span class="ml-auto font-medium">{{ numOfUpcomingAssignments }}</span></small
+              >{{ t('participantSidebar.statusUpcoming') }} <span class="ml-auto font-medium">{{ numOfUpcomingAssignments }}</span></small
             >
             <ul v-if="upcomingAssignments.length > 0" class="assignment-group__list">
               <AssignmentCard
@@ -50,15 +44,12 @@
                 @click="onClickAssignment"
               />
             </ul>
-            <div v-else class="assignment-group__empty">No upcoming assignments were found</div>
+            <div v-else class="assignment-group__empty">{{ $t('participantSidebar.noUpcomingAssignments') }}</div>
           </div>
 
-          <div
-            v-if="selectedStatusPast"
-            :class="`assignment-group assignment-group--past ${selectedStatusPast ? '--active' : ''}`"
-          >
+          <div v-if="selectedStatusPast" class="assignment-group assignment-group--past --active">
             <small class="assignment-group__title"
-              >Past <span class="ml-auto font-medium">{{ numOfPastAssignments }}</span></small
+              >{{ t('participantSidebar.statusPast') }} <span class="ml-auto font-medium">{{ numOfPastAssignments }}</span></small
             >
             <ul v-if="pastAssignments.length > 0" class="assignment-group__list">
               <AssignmentCard
@@ -70,7 +61,7 @@
                 @click="onClickAssignment"
               />
             </ul>
-            <div v-else class="assignment-group__empty">No past assignments were found</div>
+            <div v-else class="assignment-group__empty">{{ $t('participantSidebar.noPastAssignments') }}</div>
           </div>
         </div>
       </div>
@@ -86,7 +77,7 @@
 
       <div class="sidebar__nav">
         <div
-          v-tooltip.right="tooltip('Current')"
+          v-tooltip.right="getTooltip(t('participantSidebar.statusCurrent'))"
           :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.CURRENT} ${selectedStatusCurrent ? '--active' : ''}`"
           @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.CURRENT)"
         >
@@ -94,7 +85,7 @@
         </div>
 
         <div
-          v-tooltip.right="tooltip('Upcoming')"
+          v-tooltip.right="getTooltip(t('participantSidebar.statusUpcoming'))"
           :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.UPCOMING} ${selectedStatusUpcoming ? '--active' : ''}`"
           @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.UPCOMING)"
         >
@@ -102,7 +93,7 @@
         </div>
 
         <div
-          v-tooltip.right="tooltip('Past')"
+          v-tooltip.right="getTooltip(t('participantSidebar.statusPast'))"
           :class="`sidebar__nav-link --${ASSIGNMENT_STATUSES.PAST} ${selectedStatusPast ? '--active' : ''}`"
           @click="() => onClickSideBarNavLink(ASSIGNMENT_STATUSES.PAST)"
         >
@@ -115,38 +106,33 @@
 
 <script lang="ts" setup>
 import { ASSIGNMENT_STATUSES } from '@/constants';
-import { tooltip } from '@/helpers';
+import { getTooltip } from '@/helpers';
+import { getAssignmentStatus, isCurrent, isPast, isUpcoming } from '@/helpers/assignments';
 import { useAssignmentsStore } from '@/store/assignments';
 import { AdministrationType } from '@levante-framework/levante-zod';
 import { storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
 import AssignmentCard from './assignments/AssignmentCard.vue';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const assignmentsStore = useAssignmentsStore();
-const { userAssignments, selectedStatus } = storeToRefs(assignmentsStore);
-assignmentsStore.setSelectedStatus(assignmentsStore.selectedStatus.value || ASSIGNMENT_STATUSES.CURRENT);
+const { userAssignments, selectedAssignment, selectedStatus } = storeToRefs(assignmentsStore);
+assignmentsStore.setSelectedStatus(selectedStatus.value);
 
 const showSideBarPanel = ref(false);
 
-const now = computed(() => new Date());
+const currentAssignments = computed(() =>
+  userAssignments.value.filter((assignment) => isCurrent(assignment) && assignment?.completed === false),
+);
 
-function isCurrent(assignment: AdministrationType, now: Date) {
-  const opened = new Date(assignment?.dateOpened);
-  const closed = new Date(assignment?.dateClosed);
-  return opened <= now && closed >= now;
-}
+const pastAssignments = computed(() =>
+  userAssignments.value.filter((assignment) => isPast(assignment) || assignment?.completed === true),
+);
 
-function isPast(assignment: AdministrationType, now: Date) {
-  return new Date(assignment?.dateClosed) < now;
-}
-
-function isUpcoming(assignment: AdministrationType, now: Date) {
-  return new Date(assignment?.dateOpened) > now;
-}
-
-const currentAssignments = computed(() => userAssignments.value.filter((a) => isCurrent(a, now.value)));
-const pastAssignments = computed(() => userAssignments.value.filter((a) => isPast(a, now.value)));
-const upcomingAssignments = computed(() => userAssignments.value.filter((a) => isUpcoming(a, now.value)));
+const upcomingAssignments = computed(() =>
+  userAssignments.value.filter((assignment) => isUpcoming(assignment) && assignment?.completed === false),
+);
 
 const numOfCurrentAssignments = computed(() => {
   const length = currentAssignments.value?.length;
@@ -179,10 +165,12 @@ const onClickSideBarNavLink = (status: string) => {
 };
 
 const onClickSideBarPanelBackdrop = () => {
+  assignmentsStore.setSelectedStatus(getAssignmentStatus(selectedAssignment.value!));
   showSideBarPanel.value = false;
 };
 
 const onClickSideBarToggleBtn = () => {
+  assignmentsStore.setSelectedStatus(getAssignmentStatus(selectedAssignment.value!));
   showSideBarPanel.value = !showSideBarPanel.value;
 };
 </script>

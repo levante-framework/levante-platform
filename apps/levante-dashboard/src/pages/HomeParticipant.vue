@@ -1,28 +1,35 @@
 <template>
-  <div>
-    <div v-if="!initialized || isLoading || isFetching">
-      <LevanteSpinner fullscreen />
-    </div>
-
-    <div v-else-if="!hasAssignments">
-      <div class="col-full text-center py-8">
-        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
-        <p class="text-center">
-          {{ $t('homeParticipant.contactAdministrator') }}
-        </p>
-        <PvButton
-          :label="$t('navBar.signOut')"
-          class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
-          icon="pi pi-sign-out"
-          @click="signOut"
-        />
+  <div class="app app--sidebar">
+    <SideBar />
+    <div>
+      <div v-if="!initialized || isLoading || isFetching">
+        <LevanteSpinner fullscreen />
       </div>
-    </div>
 
-    <div v-else>
-      <div class="assignment">
+      <div v-else-if="!hasAssignments">
+        <div class="col-full text-center py-8">
+          <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
+          <p class="text-center">
+            {{ $t('homeParticipant.contactAdministrator') }}
+          </p>
+          <PvButton
+            :label="$t('navBar.signOut')"
+            class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
+            icon="pi pi-sign-out"
+            @click="signOut"
+          />
+        </div>
+      </div>
+
+      <div v-else>
+        <div class="assignment">
         <div class="assignment__header">
-          <PvTag :value="selectedStatus" class="text-xs uppercase" :class="`assignment__status --${selectedStatus}`" />
+          <PvTag
+            :value="t(`participantSidebar.status${capitalize(getAssignmentStatus(selectedAssignment))}`)"
+            class="text-xs uppercase"
+            :class="`assignment__status --${getAssignmentStatus(selectedAssignment)}`"
+          />
+
 
           <h2 class="assignment__name">
             {{ selectedAssignment?.publicName || selectedAssignment?.name }}
@@ -33,14 +40,14 @@
               <i class="pi pi-calendar"></i>
               <small
                 ><span class="font-bold">{{ assignmentStartDateLabel }}</span>
-                {{ format(selectedAssignment?.dateOpened, 'MMM dd, yyyy') }}</small
+                {{ formattedStartDate }}</small
               >
             </div>
             <div class="assignment__date">
               <i class="pi pi-calendar"></i>
               <small
                 ><span class="font-bold">{{ assignmentEndDateLabel }}</span>
-                {{ format(selectedAssignment?.dateClosed, 'MMM dd, yyyy') }}</small
+                {{ formattedEndDate }}</small
               >
             </div>
           </div>
@@ -68,6 +75,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
   <ConsentModal
@@ -99,12 +107,13 @@ import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import SideBar from '@/components/SideBar.vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 import { Model, settings } from 'survey-core';
 import { Converter } from 'showdown';
-import { fetchAudioLinks, getParsedLocale } from '@/helpers/survey';
+import { fetchAudioLinks } from '@/helpers/survey';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient, useQuery } from '@tanstack/vue-query';
@@ -113,15 +122,17 @@ import { useSurveyStore } from '@/store/survey';
 import { fetchDocsById } from '@/helpers/query/utils';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
 import { logger } from '@/logger';
-import { format } from 'date-fns';
+import { formatDateWithLocale } from '@/helpers';
 import PvTag from 'primevue/tag';
+import { getAssignmentStatus, isCurrent, sortAssignmentsByDateOpened } from '@/helpers/assignments';
+import { capitalize } from 'lodash';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const router = useRouter();
 const toast = useToast();
 const queryClient = useQueryClient();
@@ -170,26 +181,48 @@ const {
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
-  data,
+  data: userAssignmentsData,
 } = useUserAssignmentsQuery({
   enabled: initialized,
 });
 
-const sortedUserAdministrations = computed(() => {
-  return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-});
+const sortedUserAdministrations = computed(() => sortAssignmentsByDateOpened(userAssignments.value));
+
+const sortedUserCurrentAdministrations = computed(() =>
+  sortAssignmentsByDateOpened(
+    userAssignments.value.filter((assignment) => isCurrent(assignment) && assignment?.completed === false),
+  ),
+);
 
 const now = computed(() => new Date());
 
 const assignmentStartDateLabel = computed(() => {
   const dateOpened = selectedAssignment.value?.dateOpened || new Date();
-  return new Date(dateOpened) < now.value ? 'Opened:' : 'Open:';
+  return new Date(dateOpened) < now.value ? t('participantSidebar.statusOpened') : t('participantSidebar.statusOpen');
 });
 
 const assignmentEndDateLabel = computed(() => {
   const dateClosed = selectedAssignment.value?.dateClosed || new Date();
-  return new Date(dateClosed) < now.value ? 'Closed:' : 'Close:';
+  return new Date(dateClosed) < now.value ? t('participantSidebar.statusClosed') : t('participantSidebar.statusClose');
 });
+
+
+const formattedStartDate = ref('');
+const formattedEndDate = ref('');
+
+
+watch(
+  [selectedAssignment,locale],
+  async ([currentAssignment,currentLocale]) => {
+    if (currentAssignment?.dateOpened && currentLocale) {
+      formattedStartDate.value = await formatDateWithLocale(currentAssignment.dateOpened, 'MMM d, yyyy', currentLocale);
+    }
+    if (currentAssignment?.dateClosed && currentLocale) {
+      formattedEndDate.value = await formatDateWithLocale(currentAssignment.dateClosed, 'MMM d, yyyy', currentLocale);
+    }
+  },
+  { immediate: true }
+);
 
 const taskIds = computed(() => {
   return (selectedAssignment.value?.assessments ?? []).map((assessment) => assessment.taskId);
@@ -272,10 +305,6 @@ async function updateConsent() {
   });
 }
 
-const toggleShowOptionalAssessments = async () => {
-  await checkConsent();
-  showOptionalAssessments.value = null;
-};
 
 const userType = computed(() => {
   return toRaw(userData.value)?.userType?.toLowerCase();
@@ -377,6 +406,10 @@ let completeGames = computed(() => {
   return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
 });
 
+watch(userAssignmentsData, (newUserAssignmentsData) => {
+  userAssignments.value = sortAssignmentsByDateOpened(newUserAssignmentsData);
+});
+
 watch(
   [userData, selectedAssignment, userAssignments],
   async ([newUserData, isSelectedAdminChanged]) => {
@@ -403,7 +436,11 @@ watch(
     }
 
     // Otherwise, choose the first sorted administration if there is no selected administration.
-    selectedAssignment.value = sortedUserAdministrations.value[0];
+    const chosenAssignment = sortedUserCurrentAdministrations.value[0] || sortedUserAdministrations.value[0];
+    const chosenAssignmentStatus = getAssignmentStatus(chosenAssignment);
+
+    selectedAssignment.value = chosenAssignment;
+    selectedStatus.value = chosenAssignmentStatus;
   },
   { immediate: true },
 );
@@ -686,3 +723,4 @@ watch(
   min-width: 24%;
 }
 </style>
+

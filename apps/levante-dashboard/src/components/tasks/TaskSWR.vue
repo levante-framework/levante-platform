@@ -8,32 +8,30 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
+import { useAssignmentsStore } from '@/store/assignments';
 import useUserChildDataQuery from '@/composables/queries/useUserChildDataQuery';
 import useCompleteAssessmentMutation from '@/composables/mutations/useCompleteAssessmentMutation';
-// import packageLockJson from '../../../package-lock.json';
+import packageLockJson from '../../../package-lock.json';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
+import { logger } from '@/logger';
 
 const props = defineProps({
-  taskId: {
-    type: String,
-    required: false,
-    default: 'sre',
-  },
+  taskId: { type: String, required: true, default: 'swr' },
 });
 
 let TaskLauncher;
 
 const taskId = props.taskId;
-// const { version } = packageLockJson.packages['node_modules/@bdelab/roar-swr'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roar-swr'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
-const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
-
-const version = import.meta.env.VITE_ROAR_SRE_VERSION;
+const assignmentsStore = useAssignmentsStore();
+const { selectedAssignment } = storeToRefs(assignmentsStore);
+const { roarfirekit } = storeToRefs(authStore);
+const { isFirekitInit } = authStore;
+const { getUserId } = authStore;
 
 const { mutateAsync: completeAssessmentMutate } = useCompleteAssessmentMutation();
 
@@ -84,8 +82,7 @@ watch(
   async ([newFirekitInitValue, newLoadingUserData]) => {
     if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
       taskStarted.value = true;
-      const { selectedAdmin } = storeToRefs(gameStore);
-      await startTask(selectedAdmin);
+      await startTask(selectedAssignment);
     }
   },
   { immediate: true },
@@ -122,7 +119,7 @@ async function startTask(selectedAdmin) {
       });
 
       // Navigate to home, but first set the refresh flag to true.
-      gameStore.setHomeRefresh();
+      assignmentsStore.setHomeRefresh();
       router.push({ name: 'Home' });
     });
   } catch (error) {
@@ -130,6 +127,7 @@ async function startTask(selectedAdmin) {
     alert(
       'An error occurred while starting the task. Please refresh the page and try again. If the error persists, please submit an issue report.',
     );
+    logger.error('Error starting task', { error,  administrationId: selectedAdmin.value.id, taskId, userId: getUserId() });
   }
 }
 </script>

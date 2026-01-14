@@ -12,7 +12,8 @@ import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { flattenObj, isEmulator } from '@/helpers';
-import { FIRESTORE_BASE_URL, FIRESTORE_DATABASES } from '@/constants/firebase';
+import { FIRESTORE_BASE_URL, FIRESTORE_COLLECTIONS, FIRESTORE_DATABASES } from '@/constants/firebase';
+import { ROLES } from '@/constants/roles';
 
 export const convertValues = (value) => {
   const passThroughKeys = [
@@ -293,6 +294,20 @@ export const batchGetDocs = async (docPaths, select = [], db = FIRESTORE_DATABAS
 export const matchMode2Op = {
   equals: 'EQUAL',
   notEquals: 'NOT_EQUAL',
+};
+
+/**
+ * Maps Firestore document values to a more usable format
+ * @param {Object} data - Firestore response data with fields
+ * @returns {Object} - Mapped data with converted values
+ */
+export const mapToValues = (data) => {
+  if (!data || !data.fields) {
+    return data; // Return as-is if no fields to convert
+  }
+
+  // Convert Firestore field values using the existing convertValues function
+  return _mapValues(data.fields, (value) => convertValues(value));
 };
 
 export const fetchSubcollection = async (

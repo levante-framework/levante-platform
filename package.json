@@ -5,29 +5,28 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:db": "turbo run dev:db",
-    "test": "turbo run test --filter=./apps/levante-dashboard",
+    "test": "turbo run test --filter=./apps/client/levante-dashboard",
     "build": "turbo run build",
-    "build:dev": "turbo run build:dev --filter=./apps/levante-dashboard",
+    "build:dev": "turbo run build:dev --filter=./apps/client/levante-dashboard",
     "emulator:seed": "turbo run emulator:seed",
     "emulator:clear": "turbo run emulator:clear",
     "emulator:export": "turbo run emulator:export",
     "emulator:reset": "turbo run emulator:reset",
-    "cypress:open": "cd apps/levante-dashboard && npm run cypress:open",
-    "cypress:run": "cd apps/levante-dashboard && npm run cypress:run",
+    "cypress:open": "cd apps/client/levante-dashboard && npm run cypress:open",
+    "cypress:run": "cd apps/client/levante-dashboard && npm run cypress:run",
     "cypress:dev": "concurrently \"npm run dev\" \"npm run cypress:open\"",
     "prepare": "husky install || true",
     "clean:main": "rm -rf node_modules .turbo package-lock.json",
-    "clean:dashboard": "cd apps/levante-dashboard && rm -rf node_modules .turbo dist",
-    "clean:functions": "cd apps/levante-firebase-functions && rm -rf node_modules .turbo dist emulator_data",
-    "clean:admin-workspace": "cd apps/levante-firebase-functions/functions/levante-admin && rm -rf node_modules .turbo lib",
-    "clean:assessment-workspace": "cd apps/levante-firebase-functions/functions/levante-assessment && rm -rf node_modules .turbo lib",
-    "clean:all": "npm run clean:main && npm run clean:dashboard && npm run clean:functions && npm run clean:admin-workspace && npm run clean:assessment-workspace",
+    "clean:dashboard": "cd apps/client/levante-dashboard && rm -rf node_modules .turbo dist",
+    "clean:functions": "cd apps/server/levante-firebase-functions && rm -rf node_modules .turbo dist emulator_data",
+    "clean:admin-workspace": "cd apps/server/levante-firebase-functions/functions/levante-admin && rm -rf node_modules .turbo lib",
+    "clean:all": "npm run clean:main && npm run clean:dashboard && npm run clean:functions && npm run clean:admin-workspace",
     "clean:ports": "node scripts/clean-ports.js",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint -- --fix"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*/*"
   ],
   "devDependencies": {
     "concurrently": "^8.2.2",

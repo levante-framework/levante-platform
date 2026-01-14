@@ -6,7 +6,7 @@
     "moduleResolution": "Node",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["apps/levante-dashboard/src/*"]
+      "@/*": ["apps/client/levante-dashboard/src/*"]
     },
     "resolveJsonModule": true,
     "esModuleInterop": true,

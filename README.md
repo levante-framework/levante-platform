@@ -24,11 +24,12 @@ levante-platform integrates firebase-functions and levante-dashboard into a sing
 
 ```
 /apps
-    /levante-dashboard
-    /levante-firebase-functions
-        /functions
-            /levante-admin
-            /levante-assessment
+    /client
+        /levante-dashboard
+    /server
+        /levante-firebase-functions
+            /functions
+                /levante-admin
 ```
 
 ## Servers:

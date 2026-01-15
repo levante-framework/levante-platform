@@ -4,6 +4,26 @@ set -x
 
 PORT="${E2E_PORT:-5173}"
 VIDEO="${E2E_VIDEO:-true}"
+BROWSER="${E2E_BROWSER:-chrome}"
+SPEC_PATH="${E2E_SPEC:-cypress/e2e/researchers/**/*.cy.ts}"
+
+# Resolve vite binary in a monorepo-friendly way
+resolve_vite() {
+  if [ -x "./node_modules/.bin/vite" ]; then
+    echo "./node_modules/.bin/vite"
+    return 0
+  fi
+  if [ -x "../../node_modules/.bin/vite" ]; then
+    echo "../../node_modules/.bin/vite"
+    return 0
+  fi
+  if command -v npx >/dev/null 2>&1; then
+    echo "npx vite"
+    return 0
+  fi
+  echo "ERROR: vite not found" >&2
+  return 1
+}
 
 cleanup() {
   set +e
@@ -30,10 +50,9 @@ if [ "${E2E_KILL_PORT:-TRUE}" = "TRUE" ] || [ "${E2E_KILL_PORT:-TRUE}" = "true" 
 fi
 
 echo "Starting Vite dev server..."
-VITE_LEVANTE=TRUE \
-VITE_FIREBASE_PROJECT=DEV \
-./node_modules/.bin/vite --force --host --port "$PORT" \
-  > /tmp/vite-researchers.log 2>&1 &
+vite_cmd="$(resolve_vite)" || exit 1
+VITE_LEVANTE=TRUE VITE_FIREBASE_PROJECT=DEV \
+sh -c "$vite_cmd --force --host --port \"$PORT\" > /tmp/vite-researchers.log 2>&1 &"
 vite_pid=$!
 echo $vite_pid > /tmp/vite-researchers.pid
 echo "Vite dev server started with PID $vite_pid"
@@ -47,7 +66,8 @@ for i in $(seq 1 60); do
     tail -n 80 /tmp/vite-researchers.log || true
     exit 1
   fi
-  if curl -sSf "http://localhost:${PORT}" >/dev/null 2>&1; then
+  # Try HTTPS first, then HTTP
+  if curl -k -sSf "https://localhost:${PORT}" >/dev/null 2>&1 || curl -sSf "http://localhost:${PORT}" >/dev/null 2>&1; then
     echo "Vite dev server ready"
     vite_ready=true
     break
@@ -65,16 +85,22 @@ fi
 echo "Waiting additional 5 seconds for Vite to fully compile..."
 sleep 5
 
-SPEC_PATH="${E2E_SPEC:-cypress/e2e/researchers/**/*.cy.ts}"
 if [ "${1:-}" = "--spec" ] && [ -n "${2:-}" ]; then
   SPEC_PATH="$2"
 fi
-BROWSER="${E2E_BROWSER:-chrome}"
+
+# Map E2E_* to CYPRESS_E2E_* so Cypress.env() picks them up
+export CYPRESS_E2E_AI_SITE_ADMIN_EMAIL="${CYPRESS_E2E_AI_SITE_ADMIN_EMAIL:-${E2E_AI_SITE_ADMIN_EMAIL:-}}"
+export CYPRESS_E2E_AI_SITE_ADMIN_PASSWORD="${CYPRESS_E2E_AI_SITE_ADMIN_PASSWORD:-${E2E_AI_SITE_ADMIN_PASSWORD:-}}"
+export CYPRESS_E2E_TEST_EMAIL="${CYPRESS_E2E_TEST_EMAIL:-${E2E_TEST_EMAIL:-}}"
+export CYPRESS_E2E_TEST_PASSWORD="${CYPRESS_E2E_TEST_PASSWORD:-${E2E_TEST_PASSWORD:-}}"
+export CYPRESS_E2E_SITE_NAME="${CYPRESS_E2E_SITE_NAME:-${E2E_SITE_NAME:-ai-tests}}"
+export CYPRESS_E2E_USE_SESSION="${CYPRESS_E2E_USE_SESSION:-${E2E_USE_SESSION:-FALSE}}"
 
 # Ensure we only keep a single video for single-spec runs (avoid Cypress "(1)", "(2)" duplicates).
 # When Cypress sees an existing video with the same base name, it creates a numbered variant.
 if [ "$VIDEO" = "true" ] || [ "$VIDEO" = "TRUE" ]; then
-  VIDEOS_DIR="/home/david/levante/levante-dashboard/cypress/videos"
+  VIDEOS_DIR="$(pwd)/cypress/videos"
   if [ -f "$SPEC_PATH" ]; then
     spec_base="$(basename "$SPEC_PATH")"
     rm -f \
@@ -87,7 +113,12 @@ if [ "$VIDEO" = "true" ] || [ "$VIDEO" = "TRUE" ]; then
 fi
 
 echo "Running Cypress spec(s): ${SPEC_PATH}"
-./node_modules/.bin/cypress run --browser "$BROWSER" --e2e --spec "$SPEC_PATH" --config "baseUrl=http://localhost:${PORT},video=${VIDEO},trashAssetsBeforeRuns=false"
+if [ -x "./node_modules/.bin/cypress" ]; then
+  CYPRESS_BIN="./node_modules/.bin/cypress"
+else
+  CYPRESS_BIN="../../node_modules/.bin/cypress"
+fi
+"$CYPRESS_BIN" run --browser "$BROWSER" --e2e --spec "$SPEC_PATH" --config "baseUrl=https://localhost:${PORT},video=${VIDEO},trashAssetsBeforeRuns=false"
 code=$?
 
 if [ "$code" -ne 0 ]; then
@@ -96,10 +127,10 @@ if [ "$code" -ne 0 ]; then
 fi
 
 echo "--- Cypress artifacts ---"
-echo "Screenshots: /home/david/levante/levante-dashboard/cypress/screenshots"
-echo "Videos:      /home/david/levante/levante-dashboard/cypress/videos"
+echo "Screenshots: $(pwd)/cypress/screenshots"
+echo "Videos:      $(pwd)/cypress/videos"
 if [ "$VIDEO" = "true" ] || [ "$VIDEO" = "TRUE" ]; then
-  ls -1t /home/david/levante/levante-dashboard/cypress/videos 2>/dev/null | head -n 5 || true
+  ls -1t "$(pwd)/cypress/videos" 2>/dev/null | head -n 5 || true
 fi
 
 cleanup

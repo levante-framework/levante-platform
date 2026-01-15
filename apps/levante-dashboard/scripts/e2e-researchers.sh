@@ -7,6 +7,13 @@ VIDEO="${E2E_VIDEO:-true}"
 BROWSER="${E2E_BROWSER:-chrome}"
 SPEC_PATH="${E2E_SPEC:-cypress/e2e/researchers/**/*.cy.ts}"
 
+# Load app-level .env so CYPRESS_* or E2E_* vars are available
+if [ -f ".env" ]; then
+  set -a
+  . ./.env
+  set +a
+fi
+
 # Resolve vite binary in a monorepo-friendly way
 resolve_vite() {
   if [ -x "./node_modules/.bin/vite" ]; then
@@ -51,8 +58,8 @@ fi
 
 echo "Starting Vite dev server..."
 vite_cmd="$(resolve_vite)" || exit 1
-VITE_LEVANTE=TRUE VITE_FIREBASE_PROJECT=DEV \
-sh -c "$vite_cmd --force --host --port \"$PORT\" > /tmp/vite-researchers.log 2>&1 &"
+# Start vite in the current shell so $! is set
+eval "VITE_LEVANTE=TRUE VITE_FIREBASE_PROJECT=DEV $vite_cmd --force --host --port \"$PORT\" > /tmp/vite-researchers.log 2>&1 &"
 vite_pid=$!
 echo $vite_pid > /tmp/vite-researchers.pid
 echo "Vite dev server started with PID $vite_pid"

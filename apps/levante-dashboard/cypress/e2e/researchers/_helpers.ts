@@ -89,6 +89,45 @@ export function selectSite(siteName: string) {
   const pollMs = 1_000;
   const startedAt = Date.now();
 
+  // Best-effort fallback: create the site if selector is not available yet
+  function ensureSiteExists(): Cypress.Chainable<void> {
+    const desiredSite =
+      siteName || (Cypress.env('E2E_SITE_NAME') as string) || 'ai-tests';
+
+    // Open Groups page and create a District named desiredSite if needed
+    return cy
+      .visit('/list-groups')
+      .then(() => {
+        // If a site-select is available already, skip creation
+        return cy
+          .get('body', { timeout: 30000 })
+          .then(($body) => {
+            if ($body.find('[data-cy="site-select"]').length) {
+              return;
+            }
+            // Create a District
+            cy.contains('button', /^Add Group$/, { timeout: 60000 })
+              .should('be.visible')
+              .click();
+            cy.get('[data-testid="modalTitle"]').should('contain.text', 'Add New');
+            cy.get('[data-cy="dropdown-org-type"]').click();
+            cy.contains('[role="option"]', /^District$/).click();
+            typeInto('[data-cy="input-org-name"]', desiredSite);
+            cy.get('[data-testid="submitBtn"]')
+              .should('not.be.disabled')
+              .click();
+            // Success toast (best-effort)
+            cy.get('body', { timeout: 30000 }).then(() => {
+              // close modal if still open
+              cy.get('[data-testid="modalTitle"]', { timeout: 5000 })
+                .should('not.exist')
+                .then(() => undefined);
+            });
+          });
+      })
+      .then(() => undefined);
+  }
+
   function attempt(): Cypress.Chainable<void> {
     return cy.get('body', { timeout: 60000 }).then(($body) => {
       if ($body.find('[data-cy="site-select"]').length) {
@@ -99,13 +138,20 @@ export function selectSite(siteName: string) {
 
       return cy.window().then((win) => {
         const raw = win.sessionStorage.getItem('authStore');
-        if (typeof raw !== 'string') return retryOrFail('authStore sessionStorage missing');
+        if (typeof raw !== 'string') {
+          // Try to create the site and retry
+          return ensureSiteExists().then(() =>
+            retryOrFail('authStore sessionStorage missing'),
+          );
+        }
 
         let parsed: unknown = null;
         try {
           parsed = JSON.parse(raw);
         } catch {
-          return retryOrFail(`authStore sessionStorage is not valid JSON: ${raw}`);
+          return ensureSiteExists().then(() =>
+            retryOrFail(`authStore sessionStorage is not valid JSON: ${raw}`),
+          );
         }
 
         const currentSite =
@@ -113,10 +159,13 @@ export function selectSite(siteName: string) {
 
         if (typeof currentSite === 'string' && currentSite && currentSite !== 'any') return;
 
-        return retryOrFail(
-          `Expected currentSite to be set (not "any"). If your env requires site selection, ensure [data-cy="site-select"] is visible and E2E_SITE_NAME="${siteName}". Got: ${String(
-            currentSite,
-          )}`,
+        // Try to create the site, then prompt selection again
+        return ensureSiteExists().then(() =>
+          retryOrFail(
+            `Expected currentSite to be set (not "any"). If your env requires site selection, ensure [data-cy="site-select"] is visible and E2E_SITE_NAME="${siteName}". Got: ${String(
+              currentSite,
+            )}`,
+          ),
         );
       });
     });

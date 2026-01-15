@@ -17,6 +17,11 @@ SITE_NAME="${CYPRESS_E2E_SITE_NAME:-${E2E_SITE_NAME:-ai-tests}}"
 echo "Resetting site: ${SITE_NAME}"
 node scripts/e2e-init/reset-site.mjs --yes --force --site-name "${SITE_NAME}"
 
+# Seed cohort and participant users; capture cohort name for the run
+E2E_COHORT_NAME="$(node scripts/e2e-init/seed-users.mjs --site-name "${SITE_NAME}" 2> >(grep 'E2E_COHORT_NAME=' | tail -n1 | sed 's/.*=//'))"
+export CYPRESS_E2E_COHORT_NAME="${E2E_COHORT_NAME:-}"
+echo "Seeded cohort: ${CYPRESS_E2E_COHORT_NAME:-<none>}"
+
 echo "Running researcher-docs scenario with video..."
 E2E_PORT="${E2E_PORT:-5173}" \
 E2E_VIDEO="${E2E_VIDEO:-true}" \

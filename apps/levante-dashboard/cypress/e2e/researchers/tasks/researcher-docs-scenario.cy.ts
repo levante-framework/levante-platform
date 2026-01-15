@@ -97,7 +97,8 @@ describe('researcher docs scenario: groups → users → assignment → monitor 
     ignoreKnownHostedUncaughtExceptions();
 
     const runId = `${Date.now()}`;
-    let cohortName: string = `e2e-cohort-${runId}`;
+    let cohortName: string =
+      ((Cypress.env('E2E_COHORT_NAME') as string) || '').trim() || `e2e-cohort-${runId}`;
     const assignmentName = `e2e-assignment-${runId}`;
 
     const childId = `e2e_child_${runId}`;
@@ -118,36 +119,42 @@ describe('researcher docs scenario: groups → users → assignment → monitor 
     selectSite(siteName);
 
     // Docs Step 1: Add groups (create cohort) - best effort on DEV
-    cy.visit('/list-groups');
-    cy.get('body', { timeout: 30000 }).then(($body) => {
-      const addBtn = $body.find('button').filter((_, el) => /Add Group/i.test(el.textContent || ''));
-      if (addBtn.length > 0) {
-        cy.contains('button', /^Add Group$/).should('be.visible').click();
-        cy.get('[data-testid="modalTitle"]').should('contain.text', 'Add New');
-        cy.get('[data-cy="dropdown-org-type"]').click();
-        cy.contains('[role="option"]', /^Cohort$/).click();
-        typeInto('[data-cy="input-org-name"]', cohortName);
-        cy.get('[data-testid="submitBtn"]').should('not.be.disabled').click();
-        cy.get('[data-testid="modalTitle"]').should('not.exist');
-        cy.contains('Cohort created successfully.', { timeout: 30000 }).should('exist');
-      } else {
-        // On some DEV setups, the page or button may not be visible due to role gating.
-        // Continue without creating; we'll select an existing cohort in the assignment step.
-        cy.log('Add Group button not found; will select an existing cohort later.');
-      }
-    });
+    // Skip in-UI group creation when a pre-seeded cohort is provided
+    if (!Cypress.env('E2E_COHORT_NAME')) {
+      cy.visit('/list-groups');
+      cy.get('body', { timeout: 30000 }).then(($body) => {
+        const addBtn = $body.find('button').filter((_, el) => /Add Group/i.test(el.textContent || ''));
+        if (addBtn.length > 0) {
+          cy.contains('button', /^Add Group$/).should('be.visible').click();
+          cy.get('[data-testid="modalTitle"]').should('contain.text', 'Add New');
+          cy.get('[data-cy="dropdown-org-type"]').click();
+          cy.contains('[role="option"]', /^Cohort$/).click();
+          typeInto('[data-cy="input-org-name"]', cohortName);
+          cy.get('[data-testid="submitBtn"]').should('not.be.disabled').click();
+          cy.get('[data-testid="modalTitle"]').should('not.exist');
+          cy.contains('Cohort created successfully.', { timeout: 30000 }).should('exist');
+        } else {
+          cy.log('Add Group button not found; will select an existing cohort later.');
+        }
+      });
+    }
 
     // Docs Step 2: Add and link users (following documented two-step process)
     // Step 2B: Add users to the dashboard
     // Step 2C: Link users as needed
-    addAndLinkUsers({
-      childId,
-      caregiverId,
-      teacherId,
-      cohortName,
-      month: 5,
-      year: 2017,
-    });
+    // Skip UI add/link users when cohort and participants are pre-seeded
+    if (!Cypress.env('E2E_COHORT_NAME')) {
+      addAndLinkUsers({
+        childId,
+        caregiverId,
+        teacherId,
+        cohortName,
+        month: 5,
+        year: 2017,
+      });
+    } else {
+      cy.log('Users pre-seeded via admin API; skipping add/link users UI.');
+    }
 
     // Docs Step 3: Create assignment (assign cohort, pick a task, create)
     cy.visit('/create-assignment');

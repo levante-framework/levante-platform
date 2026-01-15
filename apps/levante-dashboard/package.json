@@ -18,6 +18,7 @@
     "e2e:init:site": "node scripts/e2e-init/reset-site.mjs --yes --force --site-name ${E2E_SITE_NAME:-ai-tests}",
     "e2e:researchers": "bash scripts/e2e-researchers.sh",
     "e2e:researchers:spec": "bash scripts/e2e-researchers.sh --spec cypress/e2e/researchers/tasks/researcher-docs-scenario.cy.ts",
+    "e2e:researchers:full": "bash scripts/e2e-researchers-full.sh",
     "format": "prettier . --write --log-level=warn",
     "generate-pwa-assets": "pwa-assets-generator",
     "check-format": "prettier . --check",

@@ -6,7 +6,7 @@
 
       <PvDivider />
 
-      <div class="text-gray-500 mb-2 surface-100 border-round p-2">
+      <div class="text-gray-500 mb-2 surface-100 border-round p-2" data-cy="upload-add-users-csv">
         <PvFileUpload
           name="massUploader[]"
           custom-upload
@@ -586,7 +586,7 @@ async function submitUsers() {
                     orgInfo.schools.push(schoolId);
                     schoolFound = true;
                     break; // Found valid parent, move to next school
-                  } catch (error) {
+                  } catch {
                     // Try next site
                     continue;
                   }
@@ -616,7 +616,7 @@ async function submitUsers() {
                       orgInfo.classes.push(classId);
                       classFound = true;
                       break; // Found valid parent, move to next class
-                    } catch (error) {
+                    } catch {
                       // Try next site/school combination
                       continue;
                     }
@@ -711,7 +711,6 @@ async function submitUsers() {
 
   // Begin submit process
   // Org must be created before users can be created
-  let processedUserCount = 0;
   for (const users of chunkedUsersToBeRegistered) {
     try {
       // Ensure each user has the proper userType field name for the backend
@@ -761,8 +760,6 @@ async function submitUsers() {
 
       registeredUsers.value.push(...currentRegisteredUsers);
 
-      // Update the count of processed users
-      processedUserCount += currentRegisteredUsers.length;
       toast.add({
         severity: 'success',
         summary: 'User Creation Successful',

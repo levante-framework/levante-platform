@@ -1,0 +1,22 @@
+{
+  "projectId": "hs-levante-admin-dev",
+  "districtId": "Rslr1LqUdcel0eNfH9CE",
+  "siteName": "ai-tests",
+  "normalizedName": "ai-tests",
+  "createdAt": "2026-01-15T06:17:02.921Z",
+  "aiAdmin": {
+    "uid": "UERzjvFEtTM9s6ZOH37xYIM5kEc2",
+    "email": "ai-admin@levante.test",
+    "role": "admin"
+  },
+  "aiSiteAdmin": {
+    "uid": "rdYSzp3XMbTkBecvsto4bhFfDuh2",
+    "email": "david81@stanford.edu",
+    "role": "site_admin"
+  },
+  "aiResearchAssistant": {
+    "uid": "MhiPccMfW7aamDF6P65IsRxRIs22",
+    "email": "ai-research-assistant@levante.test",
+    "role": "research_assistant"
+  }
+}

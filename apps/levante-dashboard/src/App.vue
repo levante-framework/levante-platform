@@ -16,6 +16,9 @@
   </Head>
   <div v-if="isAuthStoreReady">
     <PvToast position="bottom-center" />
+    <div v-if="authStore.firekitInitError" data-testid="firekit-init-error" class="p-2 text-red-600">
+      Firekit init failed: {{ authStore.firekitInitError }}
+    </div>
     <NavBar v-if="typeof $route.name === 'string' && !navbarBlacklist.includes($route.name)" />
     <router-view :key="$route.fullPath" />
 

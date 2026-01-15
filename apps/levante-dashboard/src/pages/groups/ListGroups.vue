@@ -1,5 +1,5 @@
 <template>
-  <main class="container main w-full">
+  <main class="container main w-full" data-testid="groups-page-ready">
     <section class="main-body">
       <div class="flex flex-column mb-5">
         <div class="flex flex-column align-items-start mb-2 md:flex-row w-full justify-content-between">
@@ -9,14 +9,16 @@
               class="bg-primary text-white border-none p-2 ml-auto"
               data-testid="add-group-btn"
               @click="isAddGroupModalVisible = true"
-              >Add Group</PvButton
             >
+              Add Group
+            </PvButton>
             <PvButton
               class="bg-primary text-white border-none p-2 ml-auto"
               data-testid="add-users-btn"
               @click="addUsers"
-              >Add Users</PvButton
             >
+              Add Users
+            </PvButton>
           </div>
           <div class="flex align-items-center justify-content-end w-full md:w-auto">
             <span class="p-input-icon-left p-input-icon-right">
@@ -101,7 +103,7 @@
             class="bg-primary border-none p-2 text-white hover:bg-red-900 font-normal"
             @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)"
           >
-            <i class="pi pi-copy p-2"></i>
+            <i class="pi pi-copy p-2" />
           </PvButton>
         </PvInputGroup>
         <p class="font-bold text-lg">Code:</p>
@@ -118,15 +120,16 @@
             data-cy="button-copy-invitation"
             @click="copyToClipboard(activationCode)"
           >
-            <i class="pi pi-copy p-2"></i>
+            <i class="pi pi-copy p-2" />
           </PvButton>
         </PvInputGroup>
         <div class="flex justify-content-end">
           <PvButton
             class="mt-3 bg-primary border-none border-round p-3 text-white hover:bg-red-900"
             @click="closeDialog"
-            >Close</PvButton
           >
+            Close
+          </PvButton>
         </div>
       </PvDialog>
     </section>
@@ -148,20 +151,21 @@
             label="Cancel"
             outlined
             @click="closeEditModal"
-          ></PvButton>
+          />
           <PvButton
             tabindex="0"
             class="border-none border-round bg-primary text-white p-2 hover:surface-400"
             label="Save"
             @click="updateOrgData"
-            ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
-          ></PvButton>
+          >
+            <i v-if="isSubmitting" class="pi pi-spinner pi-spin" />
+          </PvButton>
         </div>
       </div>
     </template>
   </RoarModal>
 
-  <AddGroupModal :isVisible="isAddGroupModalVisible" @close="isAddGroupModalVisible = false" />
+  <AddGroupModal :is-visible="isAddGroupModalVisible" @close="isAddGroupModalVisible = false" />
 </template>
 <script setup>
 import { ref, computed, onMounted, watch, watchEffect } from 'vue';

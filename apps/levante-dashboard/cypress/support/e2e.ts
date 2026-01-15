@@ -21,23 +21,16 @@ import './commands';
 
 // Aguardar servidores estarem prontos antes de executar testes
 beforeEach(() => {
-  // Verificar se o dashboard está rodando
-  cy.request({
-    url: 'https://localhost:5173',
-    failOnStatusCode: false,
-    timeout: 30000
-  }).then((response) => {
-    // Se conseguir conectar, o dashboard está rodando
+  // Verificar se o dashboard está rodando (usa baseUrl do Cypress se disponível)
+  const baseUrl = (Cypress.config('baseUrl') as string) || 'https://localhost:5173';
+  cy.request({ url: baseUrl, failOnStatusCode: false, timeout: 30000 }).then(() => {
     cy.log('Dashboard server is running');
   });
 
-  // Verificar se o Firebase Emulator está rodando
-  cy.request({
-    url: 'http://127.0.0.1:4001/',
-    failOnStatusCode: false,
-    timeout: 30000
-  }).then((response) => {
-    // Se conseguir conectar, o emulator está rodando
-    cy.log('Firebase Emulator is running');
-  });
+  // Verificar se o Firebase Emulator está rodando (apenas quando explicitamente requisitado)
+  if (Cypress.env('E2E_REQUIRE_EMULATOR')) {
+    cy.request({ url: 'http://127.0.0.1:4001/', failOnStatusCode: false, timeout: 30000 }).then(() => {
+      cy.log('Firebase Emulator is running');
+    });
+  }
 });

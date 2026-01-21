@@ -20,6 +20,20 @@ levante-platform integrates firebase-functions and levante-dashboard into a sing
 
 `npm run emulator:seed`
 
+### Local utility scripts
+
+Clean ports used by local services:
+
+`npm run clean:ports`
+
+Create symlinks to local dashboard/functions repos (auto-detects common folders):
+
+`node scripts/setup-symlinks.js`
+
+You can override the auto-detected locations with:
+
+`DASHBOARD_REPO="/path/to/levante-dashboard" FUNCTIONS_REPO="/path/to/levante-firebase-functions" node scripts/setup-symlinks.js`
+
 ## Repository Structure
 
 ```

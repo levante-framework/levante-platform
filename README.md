@@ -2,19 +2,19 @@
 
 levante-platform integrates firebase-functions and levante-dashboard into a single repository.
 
-## How to setup local dev environment:
+## How to setup local dev environment
 
-### Install dependencies and build projects:
+### Install dependencies and build projects
 
 `npm install`
 
-`npm run build`
+`npm run build:firebase-functions`
 
-### Run the development servers :
+### Run the development servers
 
 `npm run dev`
 
-### Seed Firebase Emulator data:
+### Seed Firebase Emulator data
 
 **Keep the server running**, and in another terminal window, run:
 
@@ -46,7 +46,7 @@ You can override the auto-detected locations with:
                 /levante-admin
 ```
 
-## Servers:
+## Servers
 
 ```
 levante-dashboard: https://localhost:5173/

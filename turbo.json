@@ -1,13 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
-    "build": {
+    "build:firebase-functions": {
       "outputs": [
-        "dist/**",
         "functions/levante-admin/lib/**"
       ]
     },
-    "build:dev": {
+    "build:dashboard-dev": {
+      "outputs": ["dist/**"]
+    },
+    "build:dashboard-prod": {
       "outputs": ["dist/**"]
     },
     "test": {

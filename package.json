@@ -5,29 +5,30 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:db": "turbo run dev:db",
-    "test": "turbo run test --filter=levante-dashboard",
-    "build": "turbo run build",
-    "build:dev": "turbo run build:dev --filter=levante-dashboard",
+    "test": "turbo run test --filter=./apps/client/levante-dashboard",
+    "build:firebase-functions": "turbo run build --filter=./apps/server/levante-firebase-functions",
+    "build:dashboard-dev": "turbo run build:dev --filter=./apps/client/levante-dashboard",
+    "build:dashboard-prod": "turbo run build:prod --filter=./apps/client/levante-dashboard",
     "emulator:seed": "turbo run emulator:seed",
     "emulator:clear": "turbo run emulator:clear",
     "emulator:export": "turbo run emulator:export",
     "emulator:reset": "turbo run emulator:reset",
-    "cypress:open": "cd apps/levante-dashboard && npm run cy",
-    "cypress:run": "cd apps/levante-dashboard && npm run cy:run",
+    "cypress:open": "cd apps/client/levante-dashboard && npm run cypress:open",
+    "cypress:run": "cd apps/client/levante-dashboard && npm run cypress:run",
     "cypress:dev": "concurrently \"npm run dev\" \"npm run cypress:open\"",
     "prepare": "husky install || true",
     "clean:main": "rm -rf node_modules .turbo package-lock.json",
-    "clean:dashboard": "cd apps/levante-dashboard && rm -rf node_modules .turbo dist",
-    "clean:functions": "cd apps/levante-firebase-functions && rm -rf node_modules .turbo dist emulator_data",
-    "clean:admin-workspace": "cd apps/levante-firebase-functions/functions/levante-admin && rm -rf node_modules .turbo lib",
-    "clean:assessment-workspace": "cd apps/levante-firebase-functions/functions/levante-assessment && rm -rf node_modules .turbo lib",
-    "clean:all": "npm run clean:main && npm run clean:dashboard && npm run clean:functions && npm run clean:admin-workspace && npm run clean:assessment-workspace",
+    "clean:dashboard": "cd apps/client/levante-dashboard && rm -rf node_modules .turbo dist",
+    "clean:functions": "cd apps/server/levante-firebase-functions && rm -rf node_modules .turbo dist emulator_data",
+    "clean:admin-workspace": "cd apps/server/levante-firebase-functions/functions/levante-admin && rm -rf node_modules .turbo lib",
+    "clean:all": "npm run clean:main && npm run clean:dashboard && npm run clean:functions && npm run clean:admin-workspace",
     "clean:ports": "node scripts/clean-ports.js",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint -- --fix"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*/*",
+    "apps/server/levante-firebase-functions/functions/*"
   ],
   "devDependencies": {
     "concurrently": "^8.2.2",
@@ -38,9 +39,9 @@
     "typescript": "^5.9.2"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=20.x"
   },
-  "packageManager": "npm@10.5.2",
+  "packageManager": "npm@10.9.2",
   "lint-staged": {
     "*.{ts,tsx,js,jsx,vue}": [
       "eslint --fix",

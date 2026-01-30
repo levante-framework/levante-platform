@@ -1,6 +1,0 @@
-{
-  "projects": {
-    "dev": "hs-levante-admin-dev",
-    "prod": "hs-levante-admin-prod"
-  }
-}

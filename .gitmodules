@@ -1,0 +1,6 @@
+[submodule "apps/client/levante-dashboard"]
+	path = apps/client/levante-dashboard
+	url = https://github.com/levante-framework/levante-dashboard
+[submodule "apps/server/levante-firebase-functions"]
+	path = apps/server/levante-firebase-functions
+	url = https://github.com/levante-framework/levante-firebase-functions

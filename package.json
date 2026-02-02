@@ -23,6 +23,9 @@
     "clean:admin-workspace": "cd apps/server/levante-firebase-functions/functions/levante-admin && rm -rf node_modules .turbo lib",
     "clean:all": "npm run clean:main && npm run clean:dashboard && npm run clean:functions && npm run clean:admin-workspace",
     "clean:ports": "node scripts/clean-ports.js",
+    "schema:docs": "node scripts/update-schema-docs.js",
+    "schema:docs:write": "node scripts/update-schema-docs.js --write",
+    "schema:check": "node scripts/check-schema-integrity.js",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint -- --fix"
   },

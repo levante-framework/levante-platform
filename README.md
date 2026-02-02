@@ -28,6 +28,12 @@ Clean ports used by local services:
 
 `npm run clean:ports`
 
+### Script docs
+
+Schema docs and integrity checks:
+
+`scripts/README.md`
+
 ## Repository Structure
 
 ```

@@ -1,0 +1,86 @@
+erDiagram
+  USER ||--o{ USER_ASSIGNMENT : has
+  USER ||--o{ USER_RUN : has
+  USER_RUN ||--o{ RUN_TRIAL : has
+  USER ||--o{ USER_SURVEY_RESPONSE : has
+  USER ||--o{ USER_ORG_MEMBERSHIP : member_of
+
+  ADMINISTRATION ||--o{ USER_ASSIGNMENT : creates
+  ADMINISTRATION ||--o{ ADMIN_ASSIGNED_ORG : assigns
+  ADMINISTRATION ||--o{ ADMIN_READ_ORG : grants_read
+  ADMINISTRATION ||--o{ ADMIN_STAT : aggregates
+  ADMINISTRATION ||--o{ ADMIN_ASSESSMENT_ITEM : contains
+
+  TASK ||--o{ TASK_VARIANT : defines
+  ADMIN_ASSESSMENT_ITEM }o--|| TASK : references
+  ADMIN_ASSESSMENT_ITEM }o--|| TASK_VARIANT : references
+
+  DISTRICT ||--o{ SCHOOL : contains
+  SCHOOL ||--o{ CLASSROOM : contains
+  DISTRICT ||--o{ GROUP : contains
+
+  USER_ORG_MEMBERSHIP }o--|| DISTRICT : site
+  USER_ORG_MEMBERSHIP }o--|| SCHOOL : school
+  USER_ORG_MEMBERSHIP }o--|| CLASSROOM : classroom
+  USER_ORG_MEMBERSHIP }o--|| GROUP : cohort
+
+  USER ||--o{ USER_CLAIMS : has
+  GUEST ||--o{ GUEST_RUN : has
+  GUEST_RUN ||--o{ RUN_TRIAL : has
+
+  USER {
+    string id
+    string displayName
+    string email
+    string userType
+  }
+  ADMINISTRATION {
+    string id
+    string publicName
+    boolean sequential
+  }
+  USER_ASSIGNMENT {
+    string id
+    string administrationId
+    boolean completed
+  }
+  ADMIN_ASSESSMENT_ITEM {
+    string taskId
+    string variantId
+    boolean optional
+  }
+  USER_RUN {
+    string id
+    string taskId
+    string assignmentId
+    boolean completed
+  }
+  RUN_TRIAL {
+    string id
+    boolean correct
+    number rt
+  }
+  TASK {
+    string id
+    string name
+  }
+  TASK_VARIANT {
+    string id
+    string name
+  }
+  DISTRICT {
+    string id
+    string name
+  }
+  SCHOOL {
+    string id
+    string name
+  }
+  CLASSROOM {
+    string id
+    string name
+  }
+  GROUP {
+    string id
+    string name
+  }

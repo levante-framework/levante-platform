@@ -1,13 +1,25 @@
 const fs = require("fs");
 const path = require("path");
 const ts = require("typescript");
+const crypto = require("crypto");
 
-const ROOT_DIR = path.resolve(__dirname, "..");
+const ROOT_DIR = path.resolve(__dirname, "../..");
 const SCHEMA_PATH = path.join(
   ROOT_DIR,
   "apps/server/levante-firebase-functions/functions/levante-admin/firestore-schema.ts"
 );
-const DEFAULT_README_PATH = path.join(ROOT_DIR, "README_FIREBASE_SCHEMA.md");
+const DEFAULT_README_PATH = path.join(
+  ROOT_DIR,
+  "schema_tools/README_FIREBASE_SCHEMA.md"
+);
+const VALIDATOR_MAPPING_PATH = path.join(
+  ROOT_DIR,
+  "schema_tools/SCHEMA_VALIDATOR_MAPPING.md"
+);
+const VALIDATOR_CONTRACT_PATH = path.join(
+  ROOT_DIR,
+  "schema_tools/SCHEMA_VALIDATOR_CONTRACT.md"
+);
 
 const BLOCK_START = "<!-- schema:snapshot:start -->";
 const BLOCK_END = "<!-- schema:snapshot:end -->";
@@ -216,7 +228,17 @@ const updateReadme = (readmeText, newBlock) => {
   return `${readmeText.trim()}\n\n${BLOCK_START}\n${newBlock}\n${BLOCK_END}\n`;
 };
 
+const updateMetaBlock = (fileText, startMarker, endMarker, content) => {
+  const blockRegex = new RegExp(`${startMarker}[\\s\\S]*?${endMarker}`, "m");
+  if (blockRegex.test(fileText)) {
+    return fileText.replace(blockRegex, `${startMarker}\n${content}\n${endMarker}`);
+  }
+  return `${fileText.trim()}\n\n${startMarker}\n${content}\n${endMarker}\n`;
+};
+
 const schemaText = fs.readFileSync(SCHEMA_PATH, "utf8");
+const schemaHash = crypto.createHash("sha256").update(schemaText).digest("hex");
+const updatedAt = new Date().toISOString();
 const sourceFile = ts.createSourceFile(
   SCHEMA_PATH,
   schemaText,
@@ -257,6 +279,24 @@ outputPaths.forEach((readmePath) => {
   fs.writeFileSync(readmePath, updatedReadme, "utf8");
   console.log(`Updated ${path.relative(ROOT_DIR, readmePath)}.`);
 });
+
+const metaContent = [
+  "Schema source: `apps/server/levante-firebase-functions/functions/levante-admin/firestore-schema.ts`",
+  `Schema sha256: \`${schemaHash}\``,
+  `Last synced: \`${updatedAt}\``,
+].join("\n");
+
+const syncMeta = (filePath) => {
+  const startMarker = "<!-- schema:validator:meta:start -->";
+  const endMarker = "<!-- schema:validator:meta:end -->";
+  const fileText = fs.readFileSync(filePath, "utf8");
+  const updatedText = updateMetaBlock(fileText, startMarker, endMarker, metaContent);
+  fs.writeFileSync(filePath, updatedText, "utf8");
+  console.log(`Updated ${path.relative(ROOT_DIR, filePath)} metadata.`);
+};
+
+syncMeta(VALIDATOR_MAPPING_PATH);
+syncMeta(VALIDATOR_CONTRACT_PATH);
 
 if (jsonOutputPath) {
   fs.writeFileSync(

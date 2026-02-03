@@ -28,6 +28,13 @@ Write snapshot JSON:
 npm run schema:docs:write -- --json-out docs/schema-snapshot.json
 ```
 
+### Validator docs
+
+The following files are refreshed when running `schema:docs:write`:
+
+- `schema_tools/SCHEMA_VALIDATOR_MAPPING.md`
+- `schema_tools/SCHEMA_VALIDATOR_CONTRACT.md`
+
 ## Schema integrity checks
 
 Run integrity check against the most recent baseline (README snapshot or git base):

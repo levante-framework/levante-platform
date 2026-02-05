@@ -1,0 +1,31 @@
+erDiagram
+  ROAR_USER ||--o{ ROAR_RUN : has
+  ROAR_RUN ||--o{ ROAR_TRIAL : writes
+  ROAR_TASK ||--o{ ROAR_VARIANT : defines
+  ROAR_RUN }o--|| ROAR_TASK : task
+  ROAR_RUN }o--|| ROAR_VARIANT : variant
+
+  ROAR_USER {
+    string id
+    string assessmentPid
+    string userType
+  }
+  ROAR_TASK {
+    string taskId
+    string name
+  }
+  ROAR_VARIANT {
+    string variantId
+    string name
+  }
+  ROAR_RUN {
+    string id
+    string taskId
+    string variantId
+    boolean completed
+  }
+  ROAR_TRIAL {
+    string id
+    string assessment_stage
+    boolean correct
+  }

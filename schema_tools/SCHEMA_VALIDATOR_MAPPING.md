@@ -14,6 +14,9 @@ Sources:
 - Validator Firestore extraction: `/home/david/levante/data-validator/firestore_services.py`
 - Validator orchestration: `/home/david/levante/data-validator/entity_controller.py`
 - Levante schema: `/home/david/levante/levante-platform/apps/server/levante-firebase-functions/functions/levante-admin/firestore-schema.ts`
+Related ROAR docs:
+- `schema_tools/ROAR_TASK_DEPENDENCIES.md`
+- `schema_tools/ROAR_FIREKIT_SCHEMA_MAPPING.md`
 
 ## Compatibility map (validator ↔ Firestore)
 

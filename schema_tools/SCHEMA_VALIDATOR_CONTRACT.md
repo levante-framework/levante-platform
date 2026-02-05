@@ -502,6 +502,19 @@ Each map shows the validator field and its Firestore source.
 | `numeric_response` | `responses.*` coerced to int |
 | `timestamp` | `responses.*.responseTime` or `surveyResponses.createdAt` |
 
+## ROAR task Firekit writes (PA/SWR/SRE)
+
+This is a quick summary of Firekit write targets for the three ROAR tasks.
+Full mapping with field-level deltas lives in `schema_tools/ROAR_FIREKIT_SCHEMA_MAPPING.md`.
+
+| Collection | Firekit writes (summary) | Notes |
+| --- | --- | --- |
+| `tasks/{taskId}` | task metadata + `lastUpdated` | Writes extra fields not in schema (`gameConfig`, `external`, `testData`, `demoData`). |
+| `tasks/{taskId}/variants/{variantId}` | variant params + `lastUpdated` | Writes `external`, `testData`, `demoData`; schema has `variantURL`. |
+| `users/{roarUid}` / `guests/{assessmentUid}` | user metadata + `tasks`/`variants` arrays | User schema doesn’t model these fields. |
+| `users/{roarUid}/runs/{runId}` | run status, scores, engagement | Writes `taskVersion`, `reliableByBlock`, `engagementFlags`, `interactions.*`. |
+| `users/{roarUid}/runs/{runId}/trials/{trialId}` | trial payload + interaction arrays | `TrialDoc` is permissive; no strict mismatch. |
+
 ## Validator query dependencies
 
 The validator **filters by date** on these fields. If any are renamed or removed,

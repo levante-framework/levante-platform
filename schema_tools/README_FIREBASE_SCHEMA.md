@@ -10,6 +10,10 @@ Terminology mapping used in the UI:
 - child/children = student(s)
 - caregiver = parent
 
+Related docs:
+- `schema_tools/ROAR_TASK_DEPENDENCIES.md`
+- `schema_tools/ROAR_FIREKIT_SCHEMA_MAPPING.md`
+
 ## Core collections and subcollections
 
 Top-level collections:

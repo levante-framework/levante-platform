@@ -61,3 +61,25 @@ Use a different base ref:
 ```
 npm run schema:check -- --base origin/release
 ```
+
+## ROAR docs
+
+Update ROAR task docs (PA/SWR/SRE) and regenerate ERD SVGs.
+
+Dry run (default):
+
+```
+node schema_tools/scripts/update-roar-docs.js
+```
+
+Write updates:
+
+```
+node schema_tools/scripts/update-roar-docs.js --write
+```
+
+Verbose output:
+
+```
+node schema_tools/scripts/update-roar-docs.js --write --verbose
+```

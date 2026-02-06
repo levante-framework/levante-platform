@@ -8,6 +8,11 @@ This guide explains how to check out the correct branches, start the emulators, 
 - Firebase CLI installed (`firebase --version`)
 - WSL users: run commands from the WSL terminal
 
+## Engineering Wiki
+
+Use the Engineering Wiki as a shared reference:
+`https://www.notion.so/ff5e551473084c05856b1718baa48411?v=3d821949926143e0a94b1dfccf3e81b8`
+
 ## Repo setup and branches
 
 1) From repo root:

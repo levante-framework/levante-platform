@@ -15,7 +15,29 @@ This guide explains how to check out the correct branches, start the emulators, 
 git checkout feat/edit-users-links
 ```
 
-2) Update submodules and check out the same branch inside each:
+2) Submodule branch sync (required):
+```
+git submodule update --init --recursive
+git submodule foreach "git fetch origin"
+
+git -C apps/client/levante-dashboard checkout feat/edit-users-links
+git -C apps/server/levante-firebase-functions checkout feat/edit-users-links
+```
+
+Verify submodule branches:
+```
+git submodule status
+git -C apps/client/levante-dashboard status -sb
+git -C apps/server/levante-firebase-functions status -sb
+```
+
+3) If the branch does not exist in a submodule, create it:
+```
+git -C apps/client/levante-dashboard checkout -b feat/edit-users-links
+git -C apps/server/levante-firebase-functions checkout -b feat/edit-users-links
+```
+
+4) (Optional) If you prefer manual navigation, check out the same branch inside each:
 ```
 git submodule update --init --recursive
 
@@ -26,11 +48,6 @@ cd -
 cd apps/server/levante-firebase-functions
 git checkout feat/edit-users-links
 cd -
-```
-
-If the branch does not exist in the submodule, create it:
-```
-git checkout -b feat/edit-users-links
 ```
 
 ## Start everything (recommended)

@@ -18,9 +18,13 @@ const DOCS = [
   },
 ];
 
+const MERMAID_CONFIG_PATH = path.join(ROOT_DIR, "schema_tools/mermaid.roar.config.json");
+
 const args = new Set(process.argv.slice(2));
 const shouldWrite = args.has("--write");
 const verbose = args.has("--verbose");
+const useConfig = args.has("--use-config");
+const force = args.has("--force");
 
 const extractMermaid = (markdown, label) => {
   const match = markdown.match(/```mermaid\s*([\s\S]*?)```/);
@@ -43,7 +47,8 @@ const writeIfChanged = (filePath, content) => {
 };
 
 const renderSvg = (inputPath, outputPath) => {
-  const command = `npx -y @mermaid-js/mermaid-cli -i "${inputPath}" -o "${outputPath}"`;
+  const configArg = useConfig && fs.existsSync(MERMAID_CONFIG_PATH) ? ` -c "${MERMAID_CONFIG_PATH}"` : "";
+  const command = `npx -y @mermaid-js/mermaid-cli -i "${inputPath}" -o "${outputPath}"${configArg}`;
   if (verbose) {
     console.log(command);
   }
@@ -61,7 +66,7 @@ const run = () => {
     }
 
     const svgMissing = !fs.existsSync(doc.svgPath);
-    if (shouldWrite && (erdChanged || svgMissing)) {
+    if (shouldWrite && (force || erdChanged || svgMissing)) {
       renderSvg(doc.erdPath, doc.svgPath);
       changes.push(`${path.relative(ROOT_DIR, doc.svgPath)} (rendered)`);
     }

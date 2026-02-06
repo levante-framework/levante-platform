@@ -29,6 +29,8 @@
     "roar:docs": "node schema_tools/scripts/update-roar-docs.js",
     "roar:docs:write": "node schema_tools/scripts/update-roar-docs.js --write",
     "roar:docs:verbose": "node schema_tools/scripts/update-roar-docs.js --write --verbose",
+    "roar:docs:config": "node schema_tools/scripts/update-roar-docs.js --write --use-config",
+    "roar:docs:force": "node schema_tools/scripts/update-roar-docs.js --write --force",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint -- --fix"
   },

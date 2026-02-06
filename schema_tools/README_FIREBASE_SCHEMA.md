@@ -152,7 +152,8 @@ erDiagram
 Primary identity and org membership for all account types.
 - Fields: `displayName`, `email`, `userType`, `assessmentUid`, `roles`, `archived`, `legal`, `testData`
 - Org membership: `districts`, `schools`, `classes`, `groups` (each is `OrgAssociationMap`)
-- Assignments state: `assignments.assigned|started|completed`
+- Links: `teacherLinks`, `parentLinks`, `childLinks` (`.current|.all|.dates`)
+- Assignments state: `assignments.assigned|started|completed|excluded`
 - Admin-only: `adminData.administrationsCreated`
 
 Schema definitions: `apps/server/levante-firebase-functions/functions/levante-admin/firestore-schema.ts`.

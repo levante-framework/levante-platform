@@ -78,6 +78,18 @@ Write updates:
 node schema_tools/scripts/update-roar-docs.js --write
 ```
 
+Write updates using custom Mermaid config:
+
+```
+node schema_tools/scripts/update-roar-docs.js --write --use-config
+```
+
+Force SVG re-render (even if no Mermaid changes):
+
+```
+node schema_tools/scripts/update-roar-docs.js --write --force
+```
+
 Verbose output:
 
 ```

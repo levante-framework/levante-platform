@@ -148,6 +148,7 @@ Optional:
 - `groups`, `classes`, `schools`, `districts` (org maps)
 - `parent1_id` / `parent2_id` (source: `parentIds`)
 - `teacher_id` (source: `teacherIds`)
+- Note: new link maps live under `parentLinks.current` / `teacherLinks.current` and may need validator fallback logic.
 - `sex` (source: `sex`)
 - `grade` (source: `grade`)
 - `valid_user`, `validation_msg_user` (validator-derived)
@@ -531,3 +532,5 @@ validation may return empty results:
 - Runs require `variant_id` but Firestore may store it under `userData.variantId`.
 - Trials require `assessment_stage` but this is task-dependent.
 - Classes are validated using `SchoolBase` in `entity_controller.set_classes`.
+- User links are moving from `teacherIds`/`parentIds` to `teacherLinks`/`parentLinks` with `current` lists.
+- `users.assignments.excluded` exists for per-user exclusions; validator does not consume it yet.

@@ -1,7 +1,7 @@
 # Cherrie Query Migration Evaluation
 
 ## Executive summary
-Cherrie moves large query surfaces from client REST calls into backend callables. Compared to current `main`, this is a **material security improvement** and can be a **performance improvement** when it reduces overfetching and round trips. The cost is operational complexity and higher risk of permission parity issues. Adopting cherrie is worth it **only if** we can prove query parity and access control per domain and roll out incrementally with a rollback path.
+Cherrie is the right direction: moving large query surfaces from client REST calls into backend callables is a **material security improvement** and a **high‑probability performance win** when callables reduce payloads and round trips. Performance gains are **conditional**, but the migration gives us the tools to make them real (server‑side filtering, aggregation, and caching). The cost is operational complexity and permission‑parity risk, which is manageable with per‑domain rollout, parity tests, and canaries. Net: we should **adopt cherrie** and enable it progressively.
 
 ## How cherrie changes the system vs main
 - **Data path**: client REST queries → callable → Firestore.
@@ -26,7 +26,7 @@ Cherrie moves large query surfaces from client REST calls into backend callables
 - **Main is simpler**: Fewer operational surfaces, but less control.
 
 ## Is cherrie worth adopting?
-**Yes, conditionally.** The security gain is real, and performance can improve for complex queries. The adoption risk is permission parity and query mismatches; these must be validated before broad rollout.
+**Yes.** The security gain is real, and the performance upside is meaningful for the high‑traffic query paths this migration targets. The remaining risks (permission parity and query mismatches) are engineering problems we can and should solve with incremental rollout and parity validation.
 
 ## Improvements I recommend
 1. **Domain‑scoped flags** with progressive enablement (already implemented).
@@ -37,6 +37,6 @@ Cherrie moves large query surfaces from client REST calls into backend callables
 6. **Migration metadata** in responses to trace mismatches quickly.
 
 ## Recommendation
-- Keep cherrie as the migration lane, rebased frequently to reduce drift.
-- Enable only one domain at a time and require parity + access tests before enabling the next.
-- Do not enable any domain in production without monitoring and rollback readiness.
+- Adopt cherrie as the migration lane and move forward with production enablement **domain by domain**.
+- Start with the lowest‑risk domain and expand once parity + access tests pass.
+- Treat monitoring and rollback readiness as gates, not suggestions.

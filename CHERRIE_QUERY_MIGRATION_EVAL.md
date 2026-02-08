@@ -1,27 +1,42 @@
 # Cherrie Query Migration Evaluation
 
-## Scope of changes completed
-- Added backend callables for org/user/tasks/runs/assignments/administrations/legal queries.
-- Wired roarfirekit wrappers and dashboard helpers behind `VITE_USE_BACKEND_MIGRATED_QUERIES`.
-- Added minimal query validator tests in functions.
+## Executive summary
+Cherrie moves large query surfaces from client REST calls into backend callables. Compared to current `main`, this is a **material security improvement** and can be a **performance improvement** when it reduces overfetching and round trips. The cost is operational complexity and higher risk of permission parity issues. Adopting cherrie is worth it **only if** we can prove query parity and access control per domain and roll out incrementally with a rollback path.
 
-## Value assessment
-- **Security**: Moving direct Firestore REST queries behind Cloud Functions reduces client-side exposure and centralizes permission checks.
-- **Maintainability**: A single backend surface area for query logic reduces duplication between REST query builders and composables.
-- **Performance**: Backend queries can return tailored data for cache updates, reducing full invalidations.
+## How cherrie changes the system vs main
+- **Data path**: client REST queries → callable → Firestore.
+- **Authorization**: centralized in functions instead of client‑side query logic.
+- **Rollout**: domain‑scoped flags enable incremental adoption.
+- **Testing need**: parity + access tests are required to avoid regressions.
 
-## Risks and gaps
-- **Migration breadth**: Direct REST queries now route through backend for org/users/tasks/runs/assignments/administrations/legal when the feature flag is enabled.
-- **Permission parity**: Some legacy adminOrg access paths may differ from new permission-system expectations and need audit.
-- **Testing depth**: Added tests are minimal; emulator-backed integration tests for access control and data shape are still needed.
+## Impact comparison (cherrie vs main)
+### Security
+- **Cherrie is stronger**: Removes direct client access to REST endpoints and centralizes authorization.
+- **Main is weaker**: Client‑side REST access spreads policy enforcement and increases exposure.
+- **New risk**: If claims/roles are inconsistent, authorization failures can become systemic.
+
+### Performance
+- **Cherrie can be faster**: Server‑side aggregation and filtering reduce payload and client work.
+- **Cherrie can be slower**: Extra hop + cold starts can increase latency for small queries.
+- **Main is predictable**: Fewer hops but more overfetching and client work.
+
+### Reliability & operability
+- **Cherrie adds complexity**: More moving parts and failure modes.
+- **Cherrie adds observability**: Server logs and metrics give clearer insight than client REST calls.
+- **Main is simpler**: Fewer operational surfaces, but less control.
+
+## Is cherrie worth adopting?
+**Yes, conditionally.** The security gain is real, and performance can improve for complex queries. The adoption risk is permission parity and query mismatches; these must be validated before broad rollout.
+
+## Improvements I recommend
+1. **Domain‑scoped flags** with progressive enablement (already implemented).
+2. **Parity tests** that compare REST vs callable results for each domain.
+3. **Access tests** for admin/site_admin/research_assistant across each domain in emulator.
+4. **Canary rollout** by site or role for each domain before global enablement.
+5. **Latency monitoring** for callable cold starts and error rates.
+6. **Migration metadata** in responses to trace mismatches quickly.
 
 ## Recommendation
-- **Proceed** with a phased rollout using `VITE_USE_BACKEND_MIGRATED_QUERIES`.
-- **Do not enable** the backend flag in production until:
-  - Emulator integration tests validate access control for each migrated query.
-  - Query parity comparisons confirm identical results between old and new paths.
-  - Monitoring is in place for latency/error regressions.
-
-## Next steps (suggested)
-1. Add emulator-based tests for each callable with representative legacy data fixtures.
-2. Run a controlled rollout: internal users → pilot site → full rollout.
+- Keep cherrie as the migration lane, rebased frequently to reduce drift.
+- Enable only one domain at a time and require parity + access tests before enabling the next.
+- Do not enable any domain in production without monitoring and rollback readiness.

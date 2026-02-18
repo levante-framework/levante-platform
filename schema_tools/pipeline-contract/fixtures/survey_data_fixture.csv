@@ -1,0 +1,3 @@
+survey_type,participant_id,administration_id,response_count
+parent,participant-001,admin-001,12
+teacher,participant-002,admin-002,9

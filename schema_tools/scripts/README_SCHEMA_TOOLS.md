@@ -83,3 +83,34 @@ Verbose output:
 ```
 node schema_tools/scripts/update-roar-docs.js --write --verbose
 ```
+
+## Pipeline contract artifact
+
+Cross-repo contract for dashboard/functions/pilots compatibility:
+
+```
+schema_tools/PIPELINE_DATA_CONTRACT.json
+```
+
+Use this as the baseline for:
+- upstream schema/cardinality checks in functions/dashboard PRs
+- downstream column/type checks in pilots ingestion scripts
+
+Manual fixture validation (for QA/CI) is in:
+
+```
+schema_tools/pipeline-contract/
+```
+
+Run from repository root:
+
+```
+Rscript schema_tools/pipeline-contract/validate_fixture_contracts.R
+```
+
+Stage-specific manual checks:
+
+```
+Rscript schema_tools/pipeline-contract/validate_stage02_contracts.R
+Rscript schema_tools/pipeline-contract/validate_stage03_contracts.R
+```

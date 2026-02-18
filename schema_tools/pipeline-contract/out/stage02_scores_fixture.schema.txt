@@ -1,0 +1,13 @@
+dataset=stage02_scores_fixture
+rows=3
+cols=7
+keys=site,item_task,run_id,metric_type
+distinct_keys=3
+columns:
+- site (character)
+- item_task (character)
+- task (character)
+- user_id (character)
+- run_id (character)
+- metric_type (character)
+- metric_value (numeric)

@@ -1,0 +1,10 @@
+dataset=survey_fixture
+rows=2
+cols=4
+keys=survey_type
+distinct_keys=2
+columns:
+- survey_type (character)
+- participant_id (character)
+- administration_id (character)
+- response_count (numeric)

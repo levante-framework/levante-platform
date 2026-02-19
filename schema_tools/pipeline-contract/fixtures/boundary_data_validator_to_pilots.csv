@@ -1,2 +1,0 @@
-dataset,site,task_id,user_id,run_id,trial_id,metric_type,metric_value
-pilot_mpieva_de_main:6c0n:v7_4,pilot_mpieva_de,hf,user-001,run-001,trial-001,ability,0.42

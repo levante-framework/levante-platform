@@ -1,8 +1,0 @@
-dataset=stage04_papers_reliability_fixture
-rows=3
-cols=2
-keys=item_task
-distinct_keys=3
-columns:
-- item_task (character)
-- rxx (numeric)

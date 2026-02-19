@@ -1,4 +1,0 @@
-site,item_task,task,user_id,run_id,metric_type,metric_value
-pilot_mpieva_de,hf,hearts & flowers,user-001,run-001,ability,0.42
-pilot_western_ca,matrix,pattern matching,user-003,run-003,ability,0.55
-pilot_uniandes_co,swr-es,word reading,user-010,run-010,ability,0.66

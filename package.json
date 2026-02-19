@@ -26,9 +26,9 @@
     "schema:docs": "node scripts/update-schema-docs.js",
     "schema:docs:write": "node scripts/update-schema-docs.js --write",
     "schema:check": "node scripts/check-schema-integrity.js",
-    "roar:docs": "node schema_tools/scripts/update-roar-docs.js",
-    "roar:docs:write": "node schema_tools/scripts/update-roar-docs.js --write",
-    "roar:docs:verbose": "node schema_tools/scripts/update-roar-docs.js --write --verbose",
+    "roar:docs": "node ../levante-support/schema_tools/scripts/update-roar-docs.js",
+    "roar:docs:write": "node ../levante-support/schema_tools/scripts/update-roar-docs.js --write",
+    "roar:docs:verbose": "node ../levante-support/schema_tools/scripts/update-roar-docs.js --write --verbose",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint -- --fix"
   },

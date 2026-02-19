@@ -1,7 +1,8 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+description: Dashboard submodule coding standards
+globs:
+  - apps/client/levante-dashboard/**
+alwaysApply: false
 ---
 
 You are an expert in JavaScript, Typescript, Node.js, Vue 3, Vue Router, Pinia, PrimeVue v4, and Tailwind.
@@ -12,7 +13,8 @@ The codebase is currently being ported to TypeScript. Only use TypeScript in fil
       
 Code Style and Structure
 - Write concise, maintainable, and technically accurate TypeScript code with relevant examples.
-- Use functional and declarative programming patterns; avoid classes.
+- Use functional and declarative programming patterns.
+- Use classes when they make sense.
 - Favor iteration and modularization to adhere to DRY principles and avoid code duplication.
 - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
 - Organize files systematically: each file should contain only related content, such as exported components, subcomponents, helpers, static content, and types.
@@ -27,7 +29,6 @@ Syntax and Formatting
 - Use the "function" keyword for pure functions to benefit from hoisting and clarity.
 - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
 - Use template syntax for declarative rendering.
-- Use if else statements instead of switch statements.
       
 UI and Styling
 - Use PrimeVue and Tailwind for components and styling.
@@ -52,7 +53,7 @@ Vue 3 and Composition API Best Practices
 - Implement custom composables for reusable logic.
 
 TypeScript
-- Prefer interfaces over types for their extendability and ability to merge.
+- Prefer interface for object contracts; use type for unions, intersections, and advanced type composition.
 - Avoid enums; use maps instead for better type safety and flexibility.
 - Use functional components with TypeScript interfaces.
 

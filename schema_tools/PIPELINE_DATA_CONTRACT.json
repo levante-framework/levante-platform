@@ -1,0 +1,318 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-02-19",
+  "description": "Cross-repo contract between levante-dashboard, levante-firebase-functions, and levante-pilots ingestion.",
+  "firestoreContracts": {
+    "surveyResponses": {
+      "collectionPath": "users/{uid}/surveyResponses/{surveyId}",
+      "documentIdPolicy": {
+        "strategy": "deterministic",
+        "expectedDocIdField": "administrationId",
+        "description": "Survey response document ID must equal administrationId."
+      },
+      "uniqueness": {
+        "scope": [
+          "uid",
+          "administrationId"
+        ],
+        "maxDocumentsPerScope": 1
+      },
+      "requiredFields": {
+        "administrationId": "string",
+        "pageNo": "number",
+        "updatedAt": "timestamp"
+      },
+      "allowedShapes": [
+        {
+          "name": "general",
+          "requiredFields": [
+            "general.isComplete",
+            "general.responses"
+          ]
+        },
+        {
+          "name": "specific-parent",
+          "requiredFields": [
+            "specific[].childId",
+            "specific[].isComplete",
+            "specific[].responses"
+          ]
+        },
+        {
+          "name": "specific-teacher",
+          "requiredFields": [
+            "specific[].classId",
+            "specific[].isComplete",
+            "specific[].responses"
+          ]
+        }
+      ]
+    },
+    "assignments": {
+      "collectionPath": "users/{uid}/assignments/{administrationId}",
+      "documentIdPolicy": {
+        "strategy": "deterministic",
+        "expectedDocIdField": "administrationId"
+      },
+      "requiredFields": {
+        "id": "string",
+        "completed": "boolean",
+        "assessments": "array"
+      }
+    },
+    "runs": {
+      "collectionPath": "users/{uid}/runs/{runId}",
+      "documentIdPolicy": {
+        "strategy": "generated",
+        "expectedDocIdField": "runId"
+      },
+      "requiredFields": {
+        "taskId": "string",
+        "assignmentId": "string|null",
+        "completed": "boolean"
+      }
+    },
+    "trials": {
+      "collectionPath": "users/{uid}/runs/{runId}/trials/{trialId}",
+      "documentIdPolicy": {
+        "strategy": "generated",
+        "expectedDocIdField": "trialId"
+      },
+      "requiredFields": {
+        "serverTimestamp": "timestamp"
+      }
+    }
+  },
+  "pilotsContracts": {
+    "taskData": {
+      "sourceScript": "01_fetch_data/fetch_task_data.qmd",
+      "requiredColumns": [
+        "redivis_source",
+        "task_id",
+        "user_id",
+        "run_id",
+        "trial_id",
+        "trial_number",
+        "item_uid",
+        "item_task",
+        "item_group",
+        "item",
+        "correct",
+        "rt",
+        "rt_numeric",
+        "response",
+        "response_type",
+        "item_original",
+        "answer",
+        "distractors",
+        "chance",
+        "difficulty",
+        "theta_estimate",
+        "theta_se",
+        "server_timestamp",
+        "valid_trial",
+        "validation_msg_trial",
+        "dataset"
+      ],
+      "postTransformColumns": [
+        "redivis_source",
+        "task_id",
+        "user_id",
+        "run_id",
+        "trial_id",
+        "trial_number",
+        "item_uid",
+        "item_task",
+        "item_group",
+        "item",
+        "correct",
+        "rt",
+        "rt_numeric",
+        "response",
+        "response_type",
+        "item_original",
+        "answer",
+        "distractors",
+        "chance",
+        "difficulty",
+        "theta_estimate",
+        "theta_se",
+        "timestamp",
+        "valid_trial",
+        "validation_msg_trial"
+      ]
+    },
+    "surveyData": {
+      "sourceScript": "01_fetch_data/fetch_survey_data.qmd",
+      "requiredColumns": [
+        "survey_type",
+        "participant_id",
+        "administration_id",
+        "response_count"
+      ]
+    },
+    "stage02Scores": {
+      "sourceScripts": [
+        "02_score_data/score_general.qmd",
+        "02_score_data/combine_scores.qmd"
+      ],
+      "requiredColumns": [
+        "site",
+        "item_task",
+        "task",
+        "user_id",
+        "run_id",
+        "metric_type",
+        "metric_value"
+      ],
+      "keyColumns": [
+        "site",
+        "item_task",
+        "run_id",
+        "metric_type"
+      ],
+      "numericColumns": [
+        "metric_value"
+      ],
+      "nonNegativeColumns": [
+        "metric_value"
+      ]
+    },
+    "stage03Summaries": {
+      "sourceScripts": [
+        "03_summaries/count_scores.R",
+        "03_summaries/surveys.qmd"
+      ],
+      "requiredColumns": [
+        "site",
+        "n_child",
+        "n_run",
+        "n_task"
+      ],
+      "numericColumns": [
+        "n_child",
+        "n_run",
+        "n_task"
+      ],
+      "nonNegativeColumns": [
+        "n_child",
+        "n_run",
+        "n_task"
+      ]
+    },
+    "stage03ExploreTasks": {
+      "sourceDirectory": "03_explore_tasks",
+      "requiredInputColumns": [
+        "site",
+        "item_task",
+        "user_id",
+        "run_id",
+        "metric_type",
+        "metric_value",
+        "age"
+      ],
+      "keyColumns": [
+        "site",
+        "item_task",
+        "run_id",
+        "metric_type"
+      ],
+      "numericColumns": [
+        "metric_value",
+        "age"
+      ],
+      "nonNegativeColumns": [
+        "metric_value",
+        "age"
+      ]
+    },
+    "stage04Papers": {
+      "sourceDirectory": "04_papers",
+      "requiredInputColumns": [
+        "site",
+        "item_task",
+        "task",
+        "user_id",
+        "run_id",
+        "metric_type",
+        "metric_value"
+      ],
+      "requiredReliabilityColumns": [
+        "item_task",
+        "rxx"
+      ],
+      "numericColumns": [
+        "metric_value",
+        "rxx"
+      ],
+      "nonNegativeColumns": [
+        "metric_value",
+        "rxx"
+      ],
+      "boundedColumns": [
+        {
+          "column": "rxx",
+          "min": 0,
+          "max": 1
+        }
+      ]
+    }
+  },
+  "pipelineBoundaries": {
+    "dashboardToDatabaseClient": {
+      "fixture": "schema_tools/pipeline-contract/fixtures/boundary_dashboard_to_database_client.json",
+      "requiredPaths": [
+        "request.requesterUid",
+        "request.administrationId",
+        "request.surveyData.pageNo",
+        "request.surveyData.isGeneral",
+        "request.surveyData.responses"
+      ]
+    },
+    "databaseClientToFunctions": {
+      "fixture": "schema_tools/pipeline-contract/fixtures/boundary_database_client_to_functions.json",
+      "requiredPaths": [
+        "callableData.surveyResponses.administrationId",
+        "callableData.surveyResponses.surveyData.pageNo",
+        "callableData.surveyResponses.surveyData.isGeneral",
+        "callableData.surveyResponses.surveyData.responses",
+        "callableData.surveyResponses.surveyData.userType"
+      ]
+    },
+    "functionsToDataValidator": {
+      "fixture": "schema_tools/pipeline-contract/fixtures/boundary_functions_to_data_validator.json",
+      "requiredPaths": [
+        "exportRow.uid",
+        "exportRow.administrationId",
+        "exportRow.pageNo",
+        "exportRow.general",
+        "exportRow.updatedAt"
+      ]
+    },
+    "dataValidatorToPilots": {
+      "fixture": "schema_tools/pipeline-contract/fixtures/boundary_data_validator_to_pilots.csv",
+      "requiredColumns": [
+        "dataset",
+        "site",
+        "task_id",
+        "user_id",
+        "run_id",
+        "trial_id",
+        "metric_type",
+        "metric_value"
+      ]
+    }
+  },
+  "breakingChangePolicy": {
+    "forbiddenWithoutMigration": [
+      "surveyResponses document ID strategy change",
+      "removal/rename of required pilots ingestion columns",
+      "changes in uniqueness scope for surveyResponses"
+    ],
+    "requiredEvidenceInPr": [
+      "contract check output",
+      "pilots validation output",
+      "migration/backfill note when applicable"
+    ]
+  }
+}

@@ -1,0 +1,2 @@
+redivis_source,task_id,user_id,run_id,trial_id,trial_number,item_uid,item_task,item_group,item,correct,rt,rt_numeric,response,response_type,item_original,answer,distractors,chance,difficulty,theta_estimate,theta_se,server_timestamp,valid_trial,validation_msg_trial,dataset
+pilot_mpieva_de_main,de-cats-and-dogs,user-001,run-001,trial-001,1,item-001,de-cats-and-dogs,practice,1,TRUE,1.2,1.2,left,keyboard,target,left,right,0.5,0.2,0.0,0.6,2026-01-20T12:00:00Z,TRUE,,pilot_mpieva_de_main:6c0n:v7_4

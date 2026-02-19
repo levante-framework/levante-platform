@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updatedAt": "2026-02-13",
+  "updatedAt": "2026-02-19",
   "description": "Cross-repo contract between levante-dashboard, levante-firebase-functions, and levante-pilots ingestion.",
   "firestoreContracts": {
     "surveyResponses": {
@@ -145,7 +145,10 @@
     "surveyData": {
       "sourceScript": "01_fetch_data/fetch_survey_data.qmd",
       "requiredColumns": [
-        "survey_type"
+        "survey_type",
+        "participant_id",
+        "administration_id",
+        "response_count"
       ]
     },
     "stage02Scores": {
@@ -195,6 +198,108 @@
         "n_child",
         "n_run",
         "n_task"
+      ]
+    },
+    "stage03ExploreTasks": {
+      "sourceDirectory": "03_explore_tasks",
+      "requiredInputColumns": [
+        "site",
+        "item_task",
+        "user_id",
+        "run_id",
+        "metric_type",
+        "metric_value",
+        "age"
+      ],
+      "keyColumns": [
+        "site",
+        "item_task",
+        "run_id",
+        "metric_type"
+      ],
+      "numericColumns": [
+        "metric_value",
+        "age"
+      ],
+      "nonNegativeColumns": [
+        "metric_value",
+        "age"
+      ]
+    },
+    "stage04Papers": {
+      "sourceDirectory": "04_papers",
+      "requiredInputColumns": [
+        "site",
+        "item_task",
+        "task",
+        "user_id",
+        "run_id",
+        "metric_type",
+        "metric_value"
+      ],
+      "requiredReliabilityColumns": [
+        "item_task",
+        "rxx"
+      ],
+      "numericColumns": [
+        "metric_value",
+        "rxx"
+      ],
+      "nonNegativeColumns": [
+        "metric_value",
+        "rxx"
+      ],
+      "boundedColumns": [
+        {
+          "column": "rxx",
+          "min": 0,
+          "max": 1
+        }
+      ]
+    }
+  },
+  "pipelineBoundaries": {
+    "dashboardToDatabaseClient": {
+      "fixture": "schema_tools/pipeline-contract/fixtures/boundary_dashboard_to_database_client.json",
+      "requiredPaths": [
+        "request.requesterUid",
+        "request.administrationId",
+        "request.surveyData.pageNo",
+        "request.surveyData.isGeneral",
+        "request.surveyData.responses"
+      ]
+    },
+    "databaseClientToFunctions": {
+      "fixture": "schema_tools/pipeline-contract/fixtures/boundary_database_client_to_functions.json",
+      "requiredPaths": [
+        "callableData.surveyResponses.administrationId",
+        "callableData.surveyResponses.surveyData.pageNo",
+        "callableData.surveyResponses.surveyData.isGeneral",
+        "callableData.surveyResponses.surveyData.responses",
+        "callableData.surveyResponses.surveyData.userType"
+      ]
+    },
+    "functionsToDataValidator": {
+      "fixture": "schema_tools/pipeline-contract/fixtures/boundary_functions_to_data_validator.json",
+      "requiredPaths": [
+        "exportRow.uid",
+        "exportRow.administrationId",
+        "exportRow.pageNo",
+        "exportRow.general",
+        "exportRow.updatedAt"
+      ]
+    },
+    "dataValidatorToPilots": {
+      "fixture": "schema_tools/pipeline-contract/fixtures/boundary_data_validator_to_pilots.csv",
+      "requiredColumns": [
+        "dataset",
+        "site",
+        "task_id",
+        "user_id",
+        "run_id",
+        "trial_id",
+        "metric_type",
+        "metric_value"
       ]
     }
   },

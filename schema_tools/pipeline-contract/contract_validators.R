@@ -148,6 +148,39 @@ assert_non_negative <- function(df, columns, dataset_name) {
   }
 }
 
+assert_bounded_columns <- function(df, bounds, dataset_name) {
+  if (is.data.frame(bounds)) {
+    bounds_df <- bounds
+  } else {
+    bounds_df <- as.data.frame(bounds, stringsAsFactors = FALSE)
+  }
+
+  for (i in seq_len(nrow(bounds_df))) {
+    column_name <- bounds_df$column[[i]]
+    min_value <- as.numeric(bounds_df$min[[i]])
+    max_value <- as.numeric(bounds_df$max[[i]])
+
+    if (!column_name %in% names(df)) {
+      stop(
+        paste0("[", dataset_name, "] Missing bounded-check column: ", column_name),
+        call. = FALSE
+      )
+    }
+
+    out_of_bounds <- sum(df[[column_name]] < min_value | df[[column_name]] > max_value, na.rm = TRUE)
+    if (out_of_bounds > 0) {
+      stop(
+        paste0(
+          "[", dataset_name, "] Column '", column_name, "' has ",
+          out_of_bounds,
+          " value(s) outside [", min_value, ", ", max_value, "]."
+        ),
+        call. = FALSE
+      )
+    }
+  }
+}
+
 write_schema_snapshot <- function(df, dataset_name, key_columns, output_path) {
   output_dir <- dirname(output_path)
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)

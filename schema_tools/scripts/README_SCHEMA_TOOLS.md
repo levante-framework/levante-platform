@@ -113,4 +113,22 @@ Stage-specific manual checks:
 ```
 Rscript schema_tools/pipeline-contract/validate_stage02_contracts.R
 Rscript schema_tools/pipeline-contract/validate_stage03_contracts.R
+Rscript schema_tools/pipeline-contract/validate_stage03_explore_contracts.R
+Rscript schema_tools/pipeline-contract/validate_stage04_papers_contracts.R
+Rscript schema_tools/pipeline-contract/validate_pipeline_boundaries.R
 ```
+
+Run all pipeline checks in one command:
+
+```
+bash schema_tools/pipeline-contract/run_contract_checks.sh
+```
+
+If fixtures changed intentionally, sync required contract columns from fixture headers:
+
+```
+node schema_tools/pipeline-contract/sync_contract_from_fixtures.mjs
+node schema_tools/pipeline-contract/sync_contract_from_fixtures.mjs --write
+```
+
+Use the dry run first, review the diff, then run with `--write`.

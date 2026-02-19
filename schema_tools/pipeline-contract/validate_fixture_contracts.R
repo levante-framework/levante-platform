@@ -24,6 +24,8 @@ task_contract <- contract$pilotsContracts$taskData
 survey_contract <- contract$pilotsContracts$surveyData
 stage02_contract <- contract$pilotsContracts$stage02Scores
 stage03_contract <- contract$pilotsContracts$stage03Summaries
+stage03_explore_contract <- contract$pilotsContracts$stage03ExploreTasks
+stage04_contract <- contract$pilotsContracts$stage04Papers
 
 task_fixture <- readr::read_csv(
   "schema_tools/pipeline-contract/fixtures/task_trials_prelim_fixture.csv",
@@ -86,6 +88,86 @@ write_schema_snapshot(
   dataset_name = "stage03_summaries_fixture",
   key_columns = c("site"),
   output_path = "schema_tools/pipeline-contract/out/stage03_summaries_fixture.schema.txt"
+)
+
+stage03_explore_fixture <- readr::read_csv(
+  "schema_tools/pipeline-contract/fixtures/stage03_explore_fixture.csv",
+  show_col_types = FALSE
+)
+assert_required_columns(
+  stage03_explore_fixture,
+  stage03_explore_contract$requiredInputColumns,
+  dataset_name = "stage03_explore_fixture"
+)
+assert_non_missing(stage03_explore_fixture, "run_id", dataset_name = "stage03_explore_fixture")
+assert_numeric_columns(
+  stage03_explore_fixture,
+  stage03_explore_contract$numericColumns,
+  dataset_name = "stage03_explore_fixture"
+)
+assert_non_negative(
+  stage03_explore_fixture,
+  stage03_explore_contract$nonNegativeColumns,
+  dataset_name = "stage03_explore_fixture"
+)
+assert_unique_keys(
+  stage03_explore_fixture,
+  stage03_explore_contract$keyColumns,
+  dataset_name = "stage03_explore_fixture"
+)
+write_schema_snapshot(
+  stage03_explore_fixture,
+  dataset_name = "stage03_explore_fixture",
+  key_columns = stage03_explore_contract$keyColumns,
+  output_path = "schema_tools/pipeline-contract/out/stage03_explore_fixture.schema.txt"
+)
+
+papers_scores_fixture <- readr::read_csv(
+  "schema_tools/pipeline-contract/fixtures/stage04_papers_scores_fixture.csv",
+  show_col_types = FALSE
+)
+assert_required_columns(
+  papers_scores_fixture,
+  stage04_contract$requiredInputColumns,
+  dataset_name = "stage04_papers_scores_fixture"
+)
+assert_non_missing(papers_scores_fixture, "run_id", dataset_name = "stage04_papers_scores_fixture")
+assert_numeric_columns(papers_scores_fixture, c("metric_value"), dataset_name = "stage04_papers_scores_fixture")
+assert_non_negative(papers_scores_fixture, c("metric_value"), dataset_name = "stage04_papers_scores_fixture")
+assert_unique_keys(
+  papers_scores_fixture,
+  c("site", "item_task", "run_id", "metric_type"),
+  dataset_name = "stage04_papers_scores_fixture"
+)
+write_schema_snapshot(
+  papers_scores_fixture,
+  dataset_name = "stage04_papers_scores_fixture",
+  key_columns = c("site", "item_task", "run_id", "metric_type"),
+  output_path = "schema_tools/pipeline-contract/out/stage04_papers_scores_fixture.schema.txt"
+)
+
+papers_reliability_fixture <- readr::read_csv(
+  "schema_tools/pipeline-contract/fixtures/stage04_papers_reliability_fixture.csv",
+  show_col_types = FALSE
+)
+assert_required_columns(
+  papers_reliability_fixture,
+  stage04_contract$requiredReliabilityColumns,
+  dataset_name = "stage04_papers_reliability_fixture"
+)
+assert_numeric_columns(papers_reliability_fixture, c("rxx"), dataset_name = "stage04_papers_reliability_fixture")
+assert_non_negative(papers_reliability_fixture, c("rxx"), dataset_name = "stage04_papers_reliability_fixture")
+assert_bounded_columns(
+  papers_reliability_fixture,
+  stage04_contract$boundedColumns,
+  dataset_name = "stage04_papers_reliability_fixture"
+)
+assert_unique_keys(papers_reliability_fixture, c("item_task"), dataset_name = "stage04_papers_reliability_fixture")
+write_schema_snapshot(
+  papers_reliability_fixture,
+  dataset_name = "stage04_papers_reliability_fixture",
+  key_columns = c("item_task"),
+  output_path = "schema_tools/pipeline-contract/out/stage04_papers_reliability_fixture.schema.txt"
 )
 
 message("Fixture contract validation passed.")

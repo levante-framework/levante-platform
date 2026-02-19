@@ -1,0 +1,20 @@
+{
+  "request": {
+    "requesterUid": "user-123",
+    "administrationId": "admin-abc",
+    "surveyData": {
+      "pageNo": 2,
+      "isGeneral": false,
+      "isComplete": false,
+      "isEntireSurveyCompleted": false,
+      "specificId": "child-777",
+      "responses": {
+        "q1": {
+          "responseValue": "yes",
+          "responseTime": "2026-02-20T12:30:00Z"
+        }
+      },
+      "userType": "parent"
+    }
+  }
+}
